@@ -2,7 +2,7 @@
 
 import { CheckCircleFilled, ClockCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card, Col, Descriptions, List, Row, Statistic, Typography } from "antd";
+import { Alert, Card, Col, Descriptions, Flex, Row, Statistic, Typography } from "antd";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -67,14 +67,14 @@ function DashboardPage() {
         {canManage && (
           <Col xs={24}>
             <Card title="Getting started">
-              <List dataSource={steps} renderItem={(step) => (
-                <List.Item>
-                  <Link href={step.href} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <Flex vertical gap={14}>
+                {steps.map((step) => (
+                  <Link key={step.label} href={step.href} style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     {step.done ? <CheckCircleFilled style={{ color: "#16a34a" }} /> : <UserAddOutlined />}
                     <Typography.Text delete={step.done}>{step.label}</Typography.Text>
                   </Link>
-                </List.Item>
-              )} />
+                ))}
+              </Flex>
             </Card>
           </Col>
         )}

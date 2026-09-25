@@ -11,7 +11,7 @@ export function tenantUrl(slug: string): string {
   return config.tenantUrlTemplate.replace("{slug}", slug);
 }
 
-/** Host shown next to the slug input, e.g. ".localhost:3000" or ".propman.so". */
+/** Host shown after the slug input without the leading dot, e.g. "localhost:3000" or "propman.so". */
 export function tenantHostSuffix(): string {
-  return new URL(tenantUrl("x")).host.slice(1);
+  return new URL(tenantUrl("x")).host.slice("x.".length);
 }
