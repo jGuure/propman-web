@@ -7,16 +7,16 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/errors";
 import type { PhotoOwner } from "@/lib/api/tenant-api";
-import type { Amenity, Building, Photo, PropertyDetails, PropertyStructure } from "@/lib/api/types";
+import type { Amenity, Building, Photo, PropertyDetails, PropertyStructure, StructureApartment } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useLabels } from "@/lib/labels";
+import { layoutSuggestions } from "@/lib/room-layouts";
 import { useAllowedTransitions } from "@/lib/portfolio-hooks";
 import { AmenityEditor } from "../AmenityEditor";
 import { BuildingFormModal } from "../BuildingFormModal";
 import { ChangeStatusModal } from "../ChangeStatusModal";
-import { CopyRoomsModal } from "../CopyRoomsModal";
 import { invalidatePortfolio } from "../invalidate";
 import { PhotoGallery } from "../PhotoGallery";
 import { RoomsEditor } from "../RoomsEditor";
@@ -182,12 +182,16 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [roomsOpen, setRoomsOpen] = useState(false);
-  const [copyOpen, setCopyOpen] = useState(false);
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
   const transitions = useAllowedTransitions(unit.data?.status);
   const amenities = useMutation({
     mutationFn: (ids: string[]) => api.setUnitAmenities(unitId, ids),
     onSuccess: () => { message.success(t("explorer.amenitiesSaved")); invalidatePortfolio(queryClient); },
+    onError: (error) => message.error(errorMessage(error)),
+  });
+  const copyFrom = useMutation({
+    mutationFn: (source: StructureApartment) => api.copyRooms(source.id, [unitId]).then(() => source),
+    onSuccess: (source) => { message.success(t("explorer.roomsCopied", { number: source.unitNumber })); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const archive = useMutation({
@@ -203,13 +207,11 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
     return <Alert type="error" showIcon title={errorMessage(unit.error)} />;
   }
   const u = unit.data;
-  const source = [...structure.flats.flatMap((f) => f.floors), ...structure.unassigned].flatMap((f) => f.apartments)
-    .find((a) => a.id === u.id);
+  const suggestions = editable && u.rooms.length === 0 ? layoutSuggestions(structure, u.id, u.type, u.buildingId) : [];
   const taken = u.status === "OCCUPIED" || u.status === "RESERVED";
   const roomsSize = u.rooms.reduce((sum, r) => sum + (r.sizeSqm ?? 0), 0);
   const inherited = [...(flatAmenities?.amenities ?? []), ...property.amenities];
   const moreItems: MenuProps["items"] = editable ? [
-    ...(u.rooms.length > 0 && source ? [{ key: "copy", icon: <CopyOutlined />, label: t("explorer.copyRooms"), onClick: () => setCopyOpen(true) }] : []),
     u.archivedAt
       ? { key: "restore", icon: <UndoOutlined />, label: t("explorer.restoreApartment"), onClick: () => archive.mutate() }
       : {
@@ -264,9 +266,30 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
           </Button>
         )}>
         {u.rooms.length === 0 ? (
-          editable
-            ? <Button block type="dashed" icon={<PlusOutlined />} onClick={() => setRoomsOpen(true)}>{t("rooms.add")}</Button>
-            : <Typography.Text type="secondary">{t("rooms.none")}</Typography.Text>
+          editable ? (
+            <Flex vertical gap={8}>
+              {suggestions.length > 0 && (
+                <>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("explorer.sameLayoutHint")}</Typography.Text>
+                  {suggestions.map((a) => (
+                    <Button key={a.id} block icon={<CopyOutlined />} loading={copyFrom.isPending && copyFrom.variables?.id === a.id}
+                      disabled={copyFrom.isPending} onClick={() => copyFrom.mutate(a)}
+                      style={{ height: "auto", padding: "6px 12px", justifyContent: "flex-start", textAlign: "left", whiteSpace: "normal" }}>
+                      <span>
+                        <Typography.Text strong>{t("explorer.sameRoomsAs", { number: a.unitNumber })}</Typography.Text>
+                        <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                          {a.rooms.map((r) => r.name).join(", ")}
+                        </Typography.Text>
+                      </span>
+                    </Button>
+                  ))}
+                </>
+              )}
+              <Button block type="dashed" icon={<PlusOutlined />} onClick={() => setRoomsOpen(true)}>
+                {suggestions.length > 0 ? t("explorer.describeOwn") : t("rooms.add")}
+              </Button>
+            </Flex>
+          ) : <Typography.Text type="secondary">{t("rooms.none")}</Typography.Text>
         ) : (
           <Flex wrap gap={6}>
             {u.rooms.map((r) => (
@@ -295,13 +318,10 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
 
       <Modal open={roomsOpen} onCancel={() => setRoomsOpen(false)} footer={null} width={720} destroyOnHidden
         title={t("explorer.roomsOf", { number: u.unitNumber })}>
-        <RoomsEditor unitId={u.id} canEdit={editable} extra={source && u.rooms.length > 0 && (
-          <Button icon={<CopyOutlined />} onClick={() => setCopyOpen(true)}>{t("explorer.copyTo")}</Button>
-        )} />
+        <RoomsEditor unitId={u.id} canEdit={editable} />
       </Modal>
       <ChangeStatusModal open={statusOpen} unitId={u.id} unitNumber={u.unitNumber} status={u.status} onClose={() => setStatusOpen(false)} />
       <UnitFormDrawer open={editOpen} unit={u} onClose={() => setEditOpen(false)} />
-      {source && <CopyRoomsModal open={copyOpen} source={source} structure={structure} onClose={() => setCopyOpen(false)} />}
     </>
   );
 }

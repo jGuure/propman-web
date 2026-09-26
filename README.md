@@ -25,9 +25,11 @@ office), and **rooms** describe an apartment. The API calls them `building`, `un
   - **flat**: status breakdown, add one/many apartments to it, its shared amenities (plus those inherited from
     the property), edit/archive;
   - **apartment**: status change, rent, bed/bath/size, rooms as small chips, own amenities (plus a count of those
-    shared by the flat and property), photo thumbnails; archive and copy-rooms sit in the ⋯ menu.
-  The panels stay short: rooms and photos are managed in a window (*Manage*: add, edit, reorder, copy the room
-  layout to other apartments; upload, order, cover, delete photos).
+    shared by the flat and property), photo thumbnails; archive sits in the ⋯ menu. An apartment without
+    rooms offers "Same rooms as …" buttons (same type, same flat first, one per distinct layout) that copy a
+    layout in one click; nothing is overwritten because the apartment is empty.
+  The panels stay short: rooms and photos are managed in a window (*Manage*: add, edit, reorder rooms; upload,
+  order, cover, delete photos).
 - A set-up checklist (details, flats, apartments, rooms, amenities, photos) shows until the property is complete,
   each missing step one click away. A *List* toggle switches the drawing to the apartments table.
 
@@ -147,7 +149,7 @@ src/
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
     portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,
-                            rooms editor, copy-rooms dialog, photo gallery, amenity editor, status modal
+                            rooms editor, photo gallery, amenity editor, status modal
       explorer/             property explorer: building drawing, side panel, set-up checklist
   i18n/                     en.ts / so.ts dictionaries, useT(), LanguageSwitcher
   lib/
