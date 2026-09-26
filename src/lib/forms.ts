@@ -1,4 +1,5 @@
 import type { FormInstance, FormRule } from "antd";
+import type { TKey } from "@/i18n/provider";
 import { ApiError } from "@/lib/api/errors";
 
 /**
@@ -21,23 +22,25 @@ function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export const passwordRules: FormRule[] = [
-  { required: true, message: "Please enter a password" },
-  { min: 8, message: "At least 8 characters" },
-  { max: 72, message: "At most 72 characters" },
-  {
-    pattern: /^(?=.*\p{L})(?=.*\d).+$/u,
-    message: "Use at least one letter and one digit",
-  },
-];
+type Translate = (key: TKey) => string;
+
+export function passwordRules(t: Translate): FormRule[] {
+  return [
+    { required: true, message: t("validation.enterPassword") },
+    { min: 8, message: t("validation.minPassword") },
+    { max: 72, message: t("validation.maxPassword") },
+    { pattern: /^(?=.*\p{L})(?=.*\d).+$/u, message: t("validation.passwordLetterDigit") },
+  ];
+}
 
 /** "Confirm password" field rules: required and equal to the field `other`. */
-export function confirmPasswordRule(other: string): FormRule[] {
+export function confirmPasswordRule(t: Translate, other: string): FormRule[] {
   return [
-    { required: true, message: "Repeat the password" },
+    { required: true, message: t("validation.repeatPassword") },
     ({ getFieldValue }) => ({
-      validator: (_, value) =>
-        !value || value === getFieldValue(other) ? Promise.resolve() : Promise.reject(new Error("Passwords do not match")),
+      validator: (_, value) => !value || value === getFieldValue(other)
+        ? Promise.resolve()
+        : Promise.reject(new Error(t("validation.passwordsDontMatch"))),
     }),
   ];
 }

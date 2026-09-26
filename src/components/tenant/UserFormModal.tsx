@@ -3,11 +3,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Form, Input, Modal, Select } from "antd";
 import { useEffect } from "react";
-import { ROLE_LABELS } from "@/components/tags";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { User, UserRole } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { applyFieldErrors } from "@/lib/forms";
+import { USER_ROLES, useLabels } from "@/lib/labels";
 
 interface UserForm {
   fullName: string;
@@ -16,18 +17,11 @@ interface UserForm {
   role: UserRole;
 }
 
-const ROLE_OPTIONS = (Object.keys(ROLE_LABELS) as UserRole[]).map((role) => ({ value: role, label: ROLE_LABELS[role] }));
-
-const ROLE_HELP: Record<UserRole, string> = {
-  OWNER: "Full access, including users and organization settings.",
-  MANAGER: "Day-to-day operations; can see the team.",
-  ACCOUNTANT: "Finance work; no user management.",
-  STAFF: "Basic access.",
-};
-
 /** Invite a new user (no `user`) or edit an existing one. */
 export function UserFormModal({ open, user, onClose }: { open: boolean; user?: User; onClose: () => void }) {
   const { api } = useTenant();
+  const { t } = useT();
+  const labels = useLabels();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm<UserForm>();
@@ -48,7 +42,7 @@ export function UserFormModal({ open, user, onClose }: { open: boolean; user?: U
         ? api.updateUser(user.id, { fullName: values.fullName, phone: values.phone || null, role: values.role })
         : api.inviteUser({ fullName: values.fullName, email: values.email, phone: values.phone || undefined, role: values.role }),
     onSuccess: (saved) => {
-      message.success(editing ? "User updated" : `Invitation sent to ${saved.email}`);
+      message.success(editing ? t("users.updated") : t("users.invited", { email: saved.email }));
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
       onClose();
@@ -61,22 +55,22 @@ export function UserFormModal({ open, user, onClose }: { open: boolean; user?: U
   });
 
   return (
-    <Modal open={open} title={editing ? "Edit user" : "Invite user"} okText={editing ? "Save" : "Send invitation"}
+    <Modal open={open} title={editing ? t("users.editTitle") : t("users.inviteTitle")} okText={editing ? t("common.save") : t("users.sendInvite")}
       onCancel={onClose} onOk={() => form.submit()} confirmLoading={save.isPending} destroyOnHidden>
       <Form<UserForm> form={form} layout="vertical" requiredMark={false} onFinish={(values) => save.mutate(values)}>
-        <Form.Item name="fullName" label="Full name" rules={[{ required: true, message: "Enter a name" }, { max: 150 }]}>
+        <Form.Item name="fullName" label={t("common.fullName")} rules={[{ required: true, message: t("validation.enterName") }, { max: 150 }]}>
           <Input autoFocus />
         </Form.Item>
-        <Form.Item name="email" label="Email"
-          rules={[{ required: true, type: "email", message: "Enter a valid email" }]}
-          extra={editing ? undefined : "We will email an invitation link, valid for 7 days."}>
+        <Form.Item name="email" label={t("common.email")}
+          rules={[{ required: true, type: "email", message: t("validation.validEmail") }]}
+          extra={editing ? undefined : t("users.inviteHelp")}>
           <Input disabled={editing} />
         </Form.Item>
-        <Form.Item name="phone" label="Phone (optional)" rules={[{ max: 30 }]}>
+        <Form.Item name="phone" label={t("common.phoneOptional")} rules={[{ max: 30 }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="role" label="Role" rules={[{ required: true }]} extra={role ? ROLE_HELP[role] : undefined}>
-          <Select options={ROLE_OPTIONS} />
+        <Form.Item name="role" label={t("users.role")} rules={[{ required: true }]} extra={role ? labels.roleHelp(role) : undefined}>
+          <Select options={USER_ROLES.map((r) => ({ value: r, label: labels.role(r) }))} />
         </Form.Item>
       </Form>
     </Modal>

@@ -4,11 +4,12 @@ import { MoreOutlined, PlusOutlined } from "@ant-design/icons";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Card, Col, Dropdown, Empty, Flex, Input, InputNumber, Row, Select, Space, Table, Typography, type MenuProps, type TableProps } from "antd";
 import { useState } from "react";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { UnitListParams, UnitStatus, UnitSummary, UnitType } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { formatMoney } from "@/lib/format";
-import { floorLabel, UNIT_STATUS_LABELS, UNIT_TYPE_LABELS } from "@/lib/labels";
+import { UNIT_STATUSES, UNIT_TYPES, useLabels } from "@/lib/labels";
 import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { useUrlState } from "@/lib/url-state";
 import { ChangeStatusModal } from "./ChangeStatusModal";
@@ -27,6 +28,8 @@ const SORTABLE = new Set(["unitNumber", "floor", "baseRent", "status", "type", "
 /** Units table with URL-synced filters, used by the Units page and the property page. */
 export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
   const { api } = useTenant();
+  const { t, tn } = useT();
+  const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const { canManage, canChangeStatus } = usePortfolioPermissions();
@@ -68,26 +71,26 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
   const archive = useMutation({
     mutationFn: (unit: UnitSummary) => (unit.archived ? api.restoreUnit(unit.id) : api.archiveUnit(unit.id)),
     onSuccess: (unit) => {
-      message.success(unit.archivedAt ? `Apartment ${unit.unitNumber} archived` : `Apartment ${unit.unitNumber} restored`);
+      message.success(t(unit.archivedAt ? "apartments.archivedMsg" : "apartments.restoredMsg", { number: unit.unitNumber }));
       invalidatePortfolio(queryClient);
     },
     onError: (error) => message.error(errorMessage(error)),
   });
 
   const actions = (unit: UnitSummary): MenuProps["items"] => {
-    const items: MenuProps["items"] = [{ key: "open", label: "Open", onClick: () => onOpenUnit(unit.id) }];
+    const items: MenuProps["items"] = [{ key: "open", label: t("common.open"), onClick: () => onOpenUnit(unit.id) }];
     if (canChangeStatus && !unit.archived) {
-      items.push({ key: "status", label: "Change status", onClick: () => setStatusUnit(unit) });
+      items.push({ key: "status", label: t("explorer.changeStatus"), onClick: () => setStatusUnit(unit) });
     }
     if (canManage) {
       items.push(unit.archived
-        ? { key: "restore", label: "Restore", onClick: () => archive.mutate(unit) }
+        ? { key: "restore", label: t("common.restore"), onClick: () => archive.mutate(unit) }
         : {
-          key: "archive", label: "Archive", danger: true, disabled: unit.status === "OCCUPIED" || unit.status === "RESERVED",
+          key: "archive", label: t("common.archive"), danger: true, disabled: unit.status === "OCCUPIED" || unit.status === "RESERVED",
           onClick: () => modal.confirm({
-            title: `Archive apartment ${unit.unitNumber}?`,
-            content: "Archived apartments are hidden from lists and the floor plan. You can restore them later.",
-            okText: "Archive", okButtonProps: { danger: true }, onOk: () => archive.mutateAsync(unit),
+            title: t("apartments.archiveTitle", { number: unit.unitNumber }),
+            content: t("apartments.archiveText"),
+            okText: t("common.archive"), okButtonProps: { danger: true }, onOk: () => archive.mutateAsync(unit),
           }),
         });
     }
@@ -96,33 +99,33 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
 
   const columns: TableProps<UnitSummary>["columns"] = [
     {
-      title: "Apartment", dataIndex: "unitNumber", key: "unitNumber", sorter: true, fixed: "left", width: 110,
+      title: t("apartments.apartment"), dataIndex: "unitNumber", key: "unitNumber", sorter: true, fixed: "left", width: 110,
       render: (number: string, unit) => <Typography.Link strong onClick={() => onOpenUnit(unit.id)}>{number}</Typography.Link>,
     },
     ...(propertyId ? [] : [{
-      title: "Property", key: "property",
+      title: t("apartments.property"), key: "property",
       render: (_: unknown, unit: UnitSummary) => unit.propertyName,
     }]),
-    { title: "Flat", key: "building", render: (_, unit) => unit.buildingName ?? "—" },
-    { title: "Rooms", key: "rooms", align: "right", render: (_, unit) => unit.roomCount || "—" },
-    { title: "Floor", dataIndex: "floor", key: "floor", sorter: true, render: floorLabel },
-    { title: "Type", dataIndex: "type", key: "type", sorter: true, render: (t: UnitType) => UNIT_TYPE_LABELS[t] },
-    { title: "Beds / baths", key: "bedrooms", sorter: true, render: (_, u) => `${u.bedrooms} / ${u.bathrooms}` },
-    { title: "Size", dataIndex: "sizeSqm", key: "sizeSqm", sorter: true, render: (s: number | null) => (s ? `${s} m²` : "—") },
+    { title: t("apartments.flat"), key: "building", render: (_, unit) => unit.buildingName ?? "—" },
+    { title: t("apartments.rooms"), key: "rooms", align: "right", render: (_, unit) => unit.roomCount || "—" },
+    { title: t("apartments.floor"), dataIndex: "floor", key: "floor", sorter: true, render: (floor: number) => labels.floor(floor) },
+    { title: t("common.type"), dataIndex: "type", key: "type", sorter: true, render: (type: UnitType) => labels.unitType(type) },
+    { title: t("apartments.bedsBaths"), key: "bedrooms", sorter: true, render: (_, u) => `${u.bedrooms} / ${u.bathrooms}` },
+    { title: t("common.size"), dataIndex: "sizeSqm", key: "sizeSqm", sorter: true, render: (s: number | null) => (s ? `${s} m²` : "—") },
     {
-      title: "Rent", dataIndex: "baseRent", key: "baseRent", sorter: true, align: "right",
-      render: (rent: number, unit) => formatMoney(rent, unit.currency),
+      title: t("common.rent"), dataIndex: "baseRent", key: "baseRent", sorter: true, align: "right",
+      render: (rent: number) => formatMoney(rent),
     },
     {
-      title: "Status", dataIndex: "status", key: "status", sorter: true,
-      render: (status: UnitStatus, unit) => (unit.archived ? <Typography.Text type="secondary">Archived</Typography.Text>
+      title: t("common.status"), dataIndex: "status", key: "status", sorter: true,
+      render: (status: UnitStatus, unit) => (unit.archived ? <Typography.Text type="secondary">{t("common.archived")}</Typography.Text>
         : <UnitStatusTag status={status} />),
     },
     {
       key: "actions", width: 56, align: "right", fixed: "right",
       render: (_, unit) => (
         <Dropdown menu={{ items: actions(unit) }} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} aria-label={`Actions for apartment ${unit.unitNumber}`} />
+          <Button type="text" icon={<MoreOutlined />} aria-label={t("apartments.actionsFor", { number: unit.unitNumber })} />
         </Dropdown>
       ),
     },
@@ -155,13 +158,13 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
     <Card>
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
         <Col xs={24} md={8} lg={6}>
-          <Input.Search key={params.search ?? ""} placeholder="Apartment, property or flat" allowClear
+          <Input.Search key={params.search ?? ""} placeholder={t("apartments.searchPlaceholder")} allowClear
             defaultValue={params.search}
             onSearch={(search) => url.set({ search })} />
         </Col>
         {!propertyId && (
           <Col xs={12} md={8} lg={4}>
-            <Select allowClear placeholder="Property" style={{ width: "100%" }} value={params.propertyId}
+            <Select allowClear placeholder={t("apartments.property")} style={{ width: "100%" }} value={params.propertyId}
               showSearch={{ optionFilterProp: "label" }}
               onChange={(v) => url.set({ propertyId: v, buildingId: undefined })}
               options={(properties.data?.content ?? []).map((p) => ({ value: p.id, label: p.name }))} />
@@ -169,39 +172,39 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
         )}
         {params.propertyId && (buildings.data?.length ?? 0) > 0 && (
           <Col xs={12} md={8} lg={4}>
-            <Select allowClear placeholder="Flat" style={{ width: "100%" }} value={params.buildingId}
+            <Select allowClear placeholder={t("apartments.flat")} style={{ width: "100%" }} value={params.buildingId}
               onChange={(v) => url.set({ buildingId: v })}
               options={(buildings.data ?? []).map((b) => ({ value: b.id, label: b.name }))} />
           </Col>
         )}
         <Col xs={12} md={8} lg={3}>
-          <Select allowClear placeholder="Status" style={{ width: "100%" }} value={params.status}
+          <Select allowClear placeholder={t("common.status")} style={{ width: "100%" }} value={params.status}
             onChange={(v) => url.set({ status: v })}
-            options={(Object.keys(UNIT_STATUS_LABELS) as UnitStatus[]).map((s) => ({ value: s, label: UNIT_STATUS_LABELS[s] }))} />
+            options={UNIT_STATUSES.map((s) => ({ value: s, label: labels.unitStatus(s) }))} />
         </Col>
         <Col xs={12} md={8} lg={3}>
-          <Select allowClear placeholder="Type" style={{ width: "100%" }} value={params.type}
+          <Select allowClear placeholder={t("common.type")} style={{ width: "100%" }} value={params.type}
             onChange={(v) => url.set({ type: v })}
-            options={(Object.keys(UNIT_TYPE_LABELS) as UnitType[]).map((t) => ({ value: t, label: UNIT_TYPE_LABELS[t] }))} />
+            options={UNIT_TYPES.map((type) => ({ value: type, label: labels.unitType(type) }))} />
         </Col>
         <Col xs={12} md={8} lg={3}>
-          <Select allowClear placeholder="Bedrooms" style={{ width: "100%" }} value={params.bedrooms}
+          <Select allowClear placeholder={t("apartments.bedrooms")} style={{ width: "100%" }} value={params.bedrooms}
             onChange={(v) => url.set({ bedrooms: v })}
-            options={[0, 1, 2, 3, 4, 5].map((n) => ({ value: n, label: n === 0 ? "No bedroom" : `${n} bedroom${n > 1 ? "s" : ""}` }))} />
+            options={[0, 1, 2, 3, 4, 5].map((n) => ({ value: n, label: n === 0 ? t("apartments.noBedroom") : tn("apartments.bedroomsN", n) }))} />
         </Col>
         <Col xs={12} md={8} lg={3}>
-          <Select allowClear placeholder="Furnished" style={{ width: "100%" }}
+          <Select allowClear placeholder={t("apartments.furnished")} style={{ width: "100%" }}
             value={params.furnished === undefined ? undefined : String(params.furnished)}
             onChange={(v) => url.set({ furnished: v })}
-            options={[{ value: "true", label: "Furnished" }, { value: "false", label: "Unfurnished" }]} />
+            options={[{ value: "true", label: t("apartments.furnished") }, { value: "false", label: t("apartments.unfurnished") }]} />
         </Col>
         <Col xs={24} md={12} lg={6}>
           <Space.Compact style={{ width: "100%" }}>
-            <InputNumber key={`min-${params.minRent}`} placeholder="Min rent" min={0} style={{ width: "50%" }}
+            <InputNumber key={`min-${params.minRent}`} placeholder={t("apartments.minRent")} min={0} style={{ width: "50%" }}
               defaultValue={params.minRent}
               onBlur={(e) => url.set({ minRent: e.target.value || undefined })}
               onPressEnter={(e) => url.set({ minRent: (e.target as HTMLInputElement).value || undefined })} />
-            <InputNumber key={`max-${params.maxRent}`} placeholder="Max rent" min={0} style={{ width: "50%" }}
+            <InputNumber key={`max-${params.maxRent}`} placeholder={t("apartments.maxRent")} min={0} style={{ width: "50%" }}
               defaultValue={params.maxRent}
               onBlur={(e) => url.set({ maxRent: e.target.value || undefined })}
               onPressEnter={(e) => url.set({ maxRent: (e.target as HTMLInputElement).value || undefined })} />
@@ -210,29 +213,29 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
         <Col xs={12} md={6} lg={3}>
           <Select style={{ width: "100%" }} value={params.archived ? "archived" : "current"}
             onChange={(v) => url.set({ archived: v === "archived" ? true : undefined })}
-            options={[{ value: "current", label: "Current" }, { value: "archived", label: "Archived" }]} />
+            options={[{ value: "current", label: t("common.current") }, { value: "archived", label: t("common.archived") }]} />
         </Col>
       </Row>
       <Table<UnitSummary> rowKey="id" columns={columns} dataSource={units.data?.content} loading={units.isFetching}
         onChange={onChange} scroll={{ x: 900 }} size="middle"
         locale={{
           emptyText: units.error ? errorMessage(units.error) : (
-            <Empty description={hasFilters ? "No apartments match these filters" : "No apartments yet"}>
+            <Empty description={hasFilters ? t("apartments.noMatch") : t("apartments.empty")}>
               {!hasFilters && canManage && onAddUnit && (
-                <Button type="primary" icon={<PlusOutlined />} onClick={onAddUnit}>Add an apartment</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={onAddUnit}>{t("apartments.addFirst")}</Button>
               )}
             </Empty>
           ),
         }}
         pagination={{
           current: params.page + 1, pageSize: params.size, total: units.data?.totalElements ?? 0,
-          showSizeChanger: true, showTotal: (total) => `${total} apartment${total === 1 ? "" : "s"}`,
+          showSizeChanger: true, showTotal: (total) => tn("count.apartments", total),
         }} />
       {hasFilters && (
         <Flex justify="end"><Button type="link" onClick={() => url.set(Object.fromEntries(
           ["propertyId", "buildingId", "status", "type", "bedrooms", "floor", "furnished", "minRent", "maxRent", "search",
             "archived"].filter((k) => !(propertyId && k === "propertyId")).map((k) => [k, undefined])))}>
-          Clear filters
+          {t("common.clearFilters")}
         </Button></Flex>
       )}
       {statusUnit && (

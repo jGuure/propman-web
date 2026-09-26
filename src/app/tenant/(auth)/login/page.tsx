@@ -8,7 +8,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { useBranding } from "@/components/tenant/TenantGate";
-import { errorMessage, isApiError } from "@/lib/api/errors";
+import { useT } from "@/i18n/provider";
+import { errorMessage } from "@/lib/api/errors";
 import { useTenant } from "@/lib/auth/tenant-context";
 
 interface LoginForm {
@@ -19,6 +20,7 @@ interface LoginForm {
 function LoginPage() {
   const { api, ready, isAuthenticated, signIn } = useTenant();
   const { data: branding } = useBranding();
+  const { t } = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const login = useMutation({
@@ -33,34 +35,33 @@ function LoginPage() {
   }, [ready, isAuthenticated, router]);
 
   const notice = searchParams.get("expired")
-    ? "Your session has expired. Please sign in again."
+    ? t("auth.sessionExpired")
     : searchParams.get("reset")
-      ? "Your password has been changed. Sign in with your new password."
+      ? t("auth.passwordChanged")
       : null;
 
   return (
-    <AuthCard title="Sign in" organizationName={branding?.name} logoUrl={branding?.logoUrl}
-      subtitle="Welcome back! Sign in to continue.">
+    <AuthCard title={t("auth.signIn")} organizationName={branding?.name} logoUrl={branding?.logoUrl}
+      subtitle={t("auth.signInWelcome")}>
       {notice && !login.error && <Alert type="info" showIcon title={notice} style={{ marginBottom: 16 }} />}
       {login.error && (
         <Alert type="error" showIcon style={{ marginBottom: 16 }}
-          title={isApiError(login.error, "RATE_LIMITED") ? "Too many attempts. Wait a minute and try again."
-            : errorMessage(login.error)} />
+          title={errorMessage(login.error)} />
       )}
       <Form<LoginForm> layout="vertical" requiredMark={false} onFinish={(values) => login.mutate(values)}
         disabled={login.isPending}>
-        <Form.Item name="email" label="Email" rules={[{ required: true, type: "email", message: "Enter your email" }]}>
+        <Form.Item name="email" label={t("common.email")} rules={[{ required: true, type: "email", message: t("validation.enterEmail") }]}>
           <Input prefix={<MailOutlined />} autoComplete="email" autoFocus size="large" />
         </Form.Item>
-        <Form.Item name="password" label="Password" rules={[{ required: true, message: "Enter your password" }]}
+        <Form.Item name="password" label={t("common.password")} rules={[{ required: true, message: t("validation.enterPassword") }]}
           style={{ marginBottom: 8 }}>
           <Input.Password prefix={<LockOutlined />} autoComplete="current-password" size="large" />
         </Form.Item>
         <div style={{ textAlign: "right", marginBottom: 16 }}>
-          <Link href="/forgot-password">Forgot password?</Link>
+          <Link href="/forgot-password">{t("auth.forgotPasswordLink")}</Link>
         </div>
         <Button type="primary" htmlType="submit" block size="large" loading={login.isPending}>
-          Sign in
+          {t("auth.signIn")}
         </Button>
       </Form>
     </AuthCard>

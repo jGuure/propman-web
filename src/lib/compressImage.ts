@@ -1,11 +1,13 @@
 import imageCompression from "browser-image-compression";
+import { getCurrentLang } from "@/i18n/core";
+import { translate } from "@/i18n/text";
 
 /** Must match the API's ilsoftware.storage.max-file-size (the API stays the source of truth). */
 export const MAX_UPLOAD_BYTES = 1024 * 1024;
 
 export class FileTooLargeError extends Error {
   constructor() {
-    super("The file is still larger than 1 MB after optimizing. Choose a smaller image.");
+    super(translate(getCurrentLang(), "errors.fileStillTooLarge"));
     this.name = "FileTooLargeError";
   }
 }
@@ -36,7 +38,7 @@ export async function compressImage(file: File, { maxWidthOrHeight = 1600 }: Com
       useWebWorker: true,
     });
   } catch {
-    throw new Error("This image could not be read. Use a PNG, JPEG or WebP photo.");
+    throw new Error(translate(getCurrentLang(), "errors.imageUnreadable"));
   }
   const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
   const result = new File([compressed], name, { type: "image/webp" });

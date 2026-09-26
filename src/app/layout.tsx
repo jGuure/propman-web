@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
+import { DEFAULT_LANG, isLang, LANG_COOKIE } from "@/i18n/core";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -11,12 +13,14 @@ export const metadata: Metadata = {
   description: "Property management for apartments and flats, by IL Software.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const saved = (await cookies()).get(LANG_COOKIE)?.value;
+  const lang = isLang(saved) ? saved : DEFAULT_LANG;
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={lang} className={inter.variable}>
       <body>
         <AntdRegistry>
-          <Providers>{children}</Providers>
+          <Providers lang={lang}>{children}</Providers>
         </AntdRegistry>
       </body>
     </html>

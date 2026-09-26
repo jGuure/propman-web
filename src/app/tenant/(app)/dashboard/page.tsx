@@ -9,6 +9,7 @@ import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBar } from "@/components/portfolio/StatusBar";
 import { UnitDrawer } from "@/components/portfolio/UnitDrawer";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import { useMe, useTenant } from "@/lib/auth/tenant-context";
 import { tenantUrl } from "@/lib/config";
@@ -18,6 +19,7 @@ import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 function DashboardPage() {
   const { api } = useTenant();
   const { data: me } = useMe();
+  const { t, tn } = useT();
   const router = useRouter();
   const { canManage } = usePortfolioPermissions();
   const welcome = useSearchParams().get("welcome");
@@ -32,10 +34,10 @@ function DashboardPage() {
 
   return (
     <>
-      <PageHeader title={`Welcome, ${firstName}`} description={me.organization.name} />
+      <PageHeader title={t("dashboard.welcome", { name: firstName })} description={me.organization.name} />
       {welcome && (
-        <Alert type="success" showIcon closable style={{ marginBottom: 20 }} title="Your organization is ready"
-          description={`${me.organization.name} is live at ${tenantUrl(me.organization.slug)}. Start by adding your first property.`} />
+        <Alert type="success" showIcon closable style={{ marginBottom: 20 }} title={t("dashboard.readyTitle")}
+          description={t("dashboard.readyText", { name: me.organization.name, url: tenantUrl(me.organization.slug) })} />
       )}
       {summary.error && <Alert type="error" showIcon title={errorMessage(summary.error)} style={{ marginBottom: 16 }} />}
       {summary.isPending && <Card><Skeleton active /></Card>}
@@ -43,12 +45,12 @@ function DashboardPage() {
         <Card>
           <Empty image={<HomeOutlined style={{ fontSize: 56, color: "#0f766e" }} />}
             description={<>
-              <Typography.Title level={4}>No properties yet</Typography.Title>
-              <Typography.Text type="secondary">Add a property, its flats and apartments to see occupancy and rent here.</Typography.Text>
+              <Typography.Title level={4}>{t("dashboard.noPropertiesTitle")}</Typography.Title>
+              <Typography.Text type="secondary">{t("dashboard.noPropertiesText")}</Typography.Text>
             </>}>
             {canManage && (
               <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/properties?add=1")}>
-                Add your first property
+                {t("dashboard.addFirstProperty")}
               </Button>
             )}
           </Empty>
@@ -57,49 +59,44 @@ function DashboardPage() {
       {s && s.properties > 0 && (
         <Row gutter={[16, 16]}>
           <Col xs={12} lg={6}>
-            <Card><Statistic title="Properties" value={s.properties} prefix={<HomeOutlined />} /></Card>
+            <Card><Statistic title={t("dashboard.properties")} value={s.properties} prefix={<HomeOutlined />} /></Card>
           </Col>
           <Col xs={12} lg={6}>
-            <Card><Statistic title="Apartments" value={s.units} prefix={<AppstoreOutlined />}
-              suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>in {s.buildings} flats</Typography.Text>} /></Card>
+            <Card><Statistic title={t("dashboard.apartments")} value={s.units} prefix={<AppstoreOutlined />}
+              suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>{t("dashboard.inFlats", { count: s.buildings })}</Typography.Text>} /></Card>
           </Col>
           <Col xs={12} lg={6}>
-            <Card><Statistic title="Vacant apartments" value={s.unitsByStatus.VACANT} styles={{ content: { color: "#16a34a" } }} /></Card>
+            <Card><Statistic title={t("dashboard.available")} value={s.unitsByStatus.VACANT} styles={{ content: { color: "#16a34a" } }} /></Card>
           </Col>
           <Col xs={12} lg={6}>
             <Card>
-              <Statistic title="Potential monthly rent" value=" " formatter={() => (
-                <Flex vertical>
-                  {s.potentialMonthlyRent.length === 0 ? "—" : s.potentialMonthlyRent.map((r) => (
-                    <span key={r.currency}>{formatMoney(r.amount, r.currency)}</span>
-                  ))}
-                </Flex>
-              )} />
+              <Statistic title={t("dashboard.potentialRent")} value=" "
+                formatter={() => formatMoney(s.potentialMonthlyRent.reduce((sum, r) => sum + r.amount, 0))} />
             </Card>
           </Col>
           <Col xs={24} lg={8}>
-            <Card title="Occupancy" style={{ height: "100%" }}>
+            <Card title={t("dashboard.occupancy")} style={{ height: "100%" }}>
               <Flex vertical align="center" gap={12}>
                 <Progress type="circle" percent={Math.round(s.occupancyRate * 100)} size={140}
                   format={() => formatPercent(s.occupancyRate)} strokeColor="#3b82f6" />
                 <Typography.Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
-                  Occupied apartments out of all apartments that can be rented (inactive ones excluded).
+                  {t("dashboard.occupancyHelp")}
                 </Typography.Text>
               </Flex>
             </Card>
           </Col>
           <Col xs={24} lg={16}>
-            <Card title="Apartments by status" style={{ height: "100%" }} extra={<Link href="/units">All apartments</Link>}>
+            <Card title={t("dashboard.byStatus")} style={{ height: "100%" }} extra={<Link href="/units">{t("dashboard.allApartments")}</Link>}>
               <StatusBar counts={s.unitsByStatus} />
-              <Typography.Title level={5} style={{ marginTop: 24 }}>Longest vacant apartments</Typography.Title>
+              <Typography.Title level={5} style={{ marginTop: 24 }}>{t("dashboard.longestAvailable")}</Typography.Title>
               <Table size="small" rowKey="id" pagination={false} dataSource={s.vacantUnits}
-                locale={{ emptyText: "No vacant apartments" }}
+                locale={{ emptyText: t("dashboard.noAvailable") }}
                 onRow={(row) => ({ onClick: () => setOpenUnit(row.id), style: { cursor: "pointer" } })}
                 columns={[
-                  { title: "Apartment", dataIndex: "unitNumber", render: (n: string) => <Typography.Link strong>{n}</Typography.Link> },
-                  { title: "Property", key: "property", render: (_, r) => r.buildingName ? `${r.propertyName} · ${r.buildingName}` : r.propertyName },
-                  { title: "Rent", key: "rent", align: "right", render: (_, r) => formatMoney(r.baseRent, r.currency) },
-                  { title: "Vacant for", dataIndex: "vacantDays", align: "right", render: (d: number) => (d === 0 ? "Today" : `${d} day${d === 1 ? "" : "s"}`) },
+                  { title: t("dashboard.apartment"), dataIndex: "unitNumber", render: (n: string) => <Typography.Link strong>{n}</Typography.Link> },
+                  { title: t("dashboard.property"), key: "property", render: (_, r) => r.buildingName ? `${r.propertyName} · ${r.buildingName}` : r.propertyName },
+                  { title: t("common.rent"), key: "rent", align: "right", render: (_, r) => formatMoney(r.baseRent) },
+                  { title: t("dashboard.availableFor"), dataIndex: "vacantDays", align: "right", render: (d: number) => (d === 0 ? t("common.today") : tn("common.days", d)) },
                 ]} />
             </Card>
           </Col>

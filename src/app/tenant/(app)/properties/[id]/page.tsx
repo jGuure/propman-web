@@ -18,8 +18,9 @@ import { UnitsTable } from "@/components/portfolio/UnitsTable";
 import { errorMessage, isApiError } from "@/lib/api/errors";
 import type { SetupStepKey } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
+import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
-import { PROPERTY_TYPE_LABELS } from "@/lib/labels";
+import { useLabels } from "@/lib/labels";
 import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { brand } from "@/lib/theme";
 import { useUrlState } from "@/lib/url-state";
@@ -33,6 +34,8 @@ function PropertyExplorerPage() {
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const { canManage } = usePortfolioPermissions();
+  const { t } = useT();
+  const labels = useLabels();
   const [editOpen, setEditOpen] = useState(false);
   const [flatOpen, setFlatOpen] = useState(false);
   const [unitOpen, setUnitOpen] = useState(false);
@@ -44,18 +47,15 @@ function PropertyExplorerPage() {
 
   const archive = useMutation({
     mutationFn: () => (property.data?.status === "ARCHIVED" ? api.restoreProperty(id) : api.archiveProperty(id)),
-    onSuccess: (p) => { message.success(p.status === "ARCHIVED" ? `${p.name} archived` : `${p.name} restored`); invalidatePortfolio(queryClient); },
+    onSuccess: (p) => { message.success(t(p.status === "ARCHIVED" ? "explorer.archived" : "explorer.restored", { name: p.name })); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
 
   const rent = useMemo(() => {
-    const totals = new Map<string, number>();
     const s = structure.data;
-    if (s) {
-      [...s.flats.flatMap((f) => f.floors), ...s.unassigned].flatMap((f) => f.apartments)
-        .forEach((a) => totals.set(a.currency, (totals.get(a.currency) ?? 0) + a.baseRent));
-    }
-    return [...totals.entries()];
+    return s
+      ? [...s.flats.flatMap((f) => f.floors), ...s.unassigned].flatMap((f) => f.apartments).reduce((sum, a) => sum + a.baseRent, 0)
+      : null;
   }, [structure.data]);
 
   if (property.isPending) {
@@ -63,7 +63,7 @@ function PropertyExplorerPage() {
   }
   if (property.error) {
     return isApiError(property.error, "NOT_FOUND")
-      ? <Result status="404" title="Property not found" extra={<Link href="/properties"><Button>All properties</Button></Link>} />
+      ? <Result status="404" title={t("properties.notFound")} extra={<Link href="/properties"><Button>{t("properties.allProperties")}</Button></Link>} />
       : <Alert type="error" showIcon title={errorMessage(property.error)} />;
   }
   const p = property.data;
@@ -96,7 +96,7 @@ function PropertyExplorerPage() {
     }
   };
 
-  const inspectorTitle = apartmentId ? `Apartment ${apartmentNumber ?? ""}` : flat ? flat.name : "Property";
+  const inspectorTitle = apartmentId ? t("explorer.apartment", { number: apartmentNumber ?? "" }) : flat ? flat.name : t("explorer.property");
   const inspector = apartmentId && s ? (
     <ApartmentInspector key={apartmentId} unitId={apartmentId} property={p} structure={s} editable={editable}
       flatAmenities={apartmentFlat ? { name: apartmentFlat.name, amenities: apartmentFlat.amenities } : null} />
@@ -108,19 +108,19 @@ function PropertyExplorerPage() {
 
   const addMenu = {
     items: [
-      { key: "flat", icon: <BankOutlined />, label: "Flat (building)", onClick: () => setFlatOpen(true) },
-      { key: "apartment", icon: <HomeOutlined />, label: "One apartment", onClick: () => setUnitOpen(true) },
-      { key: "many", icon: <AppstoreAddOutlined />, label: "Many apartments", onClick: () => router.push(`/properties/${p.id}/bulk${flatId ? `?flat=${flatId}` : ""}`) },
+      { key: "flat", icon: <BankOutlined />, label: t("explorer.addFlat"), onClick: () => setFlatOpen(true) },
+      { key: "apartment", icon: <HomeOutlined />, label: t("explorer.addOne"), onClick: () => setUnitOpen(true) },
+      { key: "many", icon: <AppstoreAddOutlined />, label: t("explorer.addMany"), onClick: () => router.push(`/properties/${p.id}/bulk${flatId ? `?flat=${flatId}` : ""}`) },
     ],
   };
 
   return (
     <>
       <Breadcrumb style={{ marginBottom: 12 }} items={[
-        { title: <Link href="/properties">Properties</Link> },
+        { title: <Link href="/properties">{t("nav.properties")}</Link> },
         { title: flatId || apartmentId ? <a onClick={() => select({})}>{p.name}</a> : p.name },
         ...(flat ? [{ title: apartmentId ? <a onClick={() => select({ flat: flat.id })}>{flat.name}</a> : flat.name }] : []),
-        ...(apartmentId ? [{ title: apartmentNumber ?? "Apartment" }] : []),
+        ...(apartmentId ? [{ title: apartmentNumber ?? t("apartments.apartment") }] : []),
       ]} />
 
       <Card style={{ marginBottom: 16 }} styles={{ body: { padding: 16 } }}>
@@ -134,28 +134,28 @@ function PropertyExplorerPage() {
             <Space align="center" wrap>
               <Typography.Title level={3} style={{ margin: 0 }}>{p.name}</Typography.Title>
               <PropertyStatusTag status={p.status} />
-              <Tag>{PROPERTY_TYPE_LABELS[p.type]}</Tag>
+              <Tag>{labels.propertyType(p.type)}</Tag>
             </Space>
             <Typography.Text type="secondary" style={{ display: "block" }}>
               {p.code} · {[p.district, p.city].filter(Boolean).join(", ")}
             </Typography.Text>
             <Flex gap={24} wrap style={{ marginTop: 8 }}>
-              <Kpi label="Flats" value={p.setup.flats} />
-              <Kpi label="Apartments" value={p.setup.apartments} />
-              <Kpi label="Rooms" value={p.setup.rooms} />
-              <Kpi label="Occupied" value={`${p.unitStats.occupied} · ${formatPercent(p.unitStats.occupancyRate)}`} />
-              <Kpi label="Monthly rent (all)" value={rent.length ? rent.map(([c, v]) => formatMoney(v, c)).join(" + ") : "—"} />
+              <Kpi label={t("explorer.flats")} value={p.setup.flats} />
+              <Kpi label={t("explorer.apartments")} value={p.setup.apartments} />
+              <Kpi label={t("explorer.rooms")} value={p.setup.rooms} />
+              <Kpi label={t("explorer.occupied")} value={`${p.unitStats.occupied} · ${formatPercent(p.unitStats.occupancyRate)}`} />
+              <Kpi label={t("explorer.monthlyRent")} value={formatMoney(rent)} />
             </Flex>
           </div>
           {canManage && (
             <Space wrap>
-              {editable && <Dropdown menu={addMenu} trigger={["click"]}><Button type="primary" icon={<PlusOutlined />}>Add <DownOutlined /></Button></Dropdown>}
-              {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>}
+              {editable && <Dropdown menu={addMenu} trigger={["click"]}><Button type="primary" icon={<PlusOutlined />}>{t("explorer.addMenu")} <DownOutlined /></Button></Dropdown>}
+              {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
               {archived
-                ? <Button icon={<UndoOutlined />} loading={archive.isPending} onClick={() => archive.mutate()}>Restore</Button>
-                : <Button type="text" danger icon={<InboxOutlined />} aria-label="Archive property" onClick={() => modal.confirm({
-                  title: `Archive ${p.name}?`, okText: "Archive", okButtonProps: { danger: true },
-                  content: "Its flats and apartments are archived too. Occupied or reserved apartments must be freed first. You can restore it later.",
+                ? <Button icon={<UndoOutlined />} loading={archive.isPending} onClick={() => archive.mutate()}>{t("common.restore")}</Button>
+                : <Button type="text" danger icon={<InboxOutlined />} aria-label={t("explorer.archiveProperty")} onClick={() => modal.confirm({
+                  title: t("explorer.archiveTitle", { name: p.name }), okText: t("common.archive"), okButtonProps: { danger: true },
+                  content: t("explorer.archiveText"),
                   onOk: () => archive.mutateAsync(),
                 })} />}
             </Space>
@@ -163,13 +163,13 @@ function PropertyExplorerPage() {
         </Flex>
       </Card>
 
-      {archived && <Alert type="warning" showIcon style={{ marginBottom: 16 }} title="This property is archived. Restore it to make changes." />}
+      {archived && <Alert type="warning" showIcon style={{ marginBottom: 16 }} title={t("explorer.archivedNotice")} />}
       {editable && <SetupChecklist setup={p.setup} onAction={onSetupAction} />}
 
       <Row gutter={16} align="top">
         <Col xs={24} lg={15} xl={16}>
           <Card title={<Segmented value={view} onChange={(v) => url.set({ view: v === "list" ? "list" : undefined })}
-            options={[{ value: "building", icon: <BankOutlined />, label: "Buildings" }, { value: "list", icon: <BarsOutlined />, label: "List" }]} />}>
+            options={[{ value: "building", icon: <BankOutlined />, label: t("explorer.buildingsView") }, { value: "list", icon: <BarsOutlined />, label: t("explorer.listView") }]} />}>
             {view === "building"
               ? (s ? <BuildingExplorer structure={s} selectedFlatId={flatId} selectedApartmentId={apartmentId}
                 onSelectFlat={(fid) => select({ flat: fid })}
@@ -180,7 +180,7 @@ function PropertyExplorerPage() {
         {screens.lg && (
           <Col lg={9} xl={8}>
             <Card title={inspectorTitle} style={{ position: "sticky", top: 16 }}
-              extra={(flatId || apartmentId) && <Button type="link" size="small" onClick={() => select(apartmentId && flatId ? { flat: flatId } : {})}>Back</Button>}
+              extra={(flatId || apartmentId) && <Button type="link" size="small" onClick={() => select(apartmentId && flatId ? { flat: flatId } : {})}>{t("common.back")}</Button>}
               styles={{ body: { maxHeight: "calc(100vh - 140px)", overflowY: "auto" } }}>
               {inspector}
             </Card>
@@ -189,7 +189,7 @@ function PropertyExplorerPage() {
       </Row>
       {!screens.lg && (
         <>
-          {!flatId && !apartmentId && <Card title="Property" style={{ marginTop: 16 }}>{inspector}</Card>}
+          {!flatId && !apartmentId && <Card title={t("explorer.property")} style={{ marginTop: 16 }}>{inspector}</Card>}
           <Drawer open={!!(flatId || apartmentId)} placement="bottom" size="85%" title={inspectorTitle}
             onClose={() => select({})} destroyOnHidden>
             {inspector}

@@ -6,19 +6,22 @@ import { Alert, App, Button, Card, Col, Flex, Form, Input, Popconfirm, Row, Sele
 import { useEffect, useMemo } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { PageHeader } from "@/components/PageHeader";
+import { useT } from "@/i18n/provider";
 import { errorMessage, isApiError } from "@/lib/api/errors";
 import type { Organization, UpdateOrganizationRequest } from "@/lib/api/types";
 import { useCan, useTenant } from "@/lib/auth/tenant-context";
 import { compressImage } from "@/lib/compressImage";
 import { tenantUrl } from "@/lib/config";
+import { CURRENCY } from "@/lib/format";
 import { applyFieldErrors } from "@/lib/forms";
-import { countryOptions, currencyOptions, timezoneOptions } from "@/lib/reference-data";
+import { countryOptions, timezoneOptions } from "@/lib/reference-data";
 
 const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export default function OrganizationPage() {
   const { api } = useTenant();
   const canEdit = useCan("organization:update");
+  const { t, lang } = useT();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm<UpdateOrganizationRequest>();
@@ -41,7 +44,7 @@ export default function OrganizationPage() {
     mutationFn: (values: UpdateOrganizationRequest) => api.updateOrganization(values),
     onSuccess: (updated) => {
       refresh(updated);
-      message.success("Organization saved");
+      message.success(t("organization.saved"));
     },
     onError: (error) => {
       if (!applyFieldErrors(form, error)) {
@@ -53,7 +56,7 @@ export default function OrganizationPage() {
     mutationFn: async (file: File) => api.uploadLogo(await compressImage(file, { maxWidthOrHeight: 512 })),
     onSuccess: (updated) => {
       refresh(updated);
-      message.success("Logo updated");
+      message.success(t("organization.logoUpdated"));
     },
     onError: (error) => message.error(isApiError(error) ? errorMessage(error) : error.message),
   });
@@ -63,7 +66,7 @@ export default function OrganizationPage() {
       queryClient.invalidateQueries({ queryKey: ["organization"] });
       queryClient.invalidateQueries({ queryKey: ["me"] });
       queryClient.invalidateQueries({ queryKey: ["branding"] });
-      message.success("Logo removed");
+      message.success(t("organization.logoRemoved"));
     },
     onError: (error) => message.error(errorMessage(error)),
   });
@@ -78,13 +81,13 @@ export default function OrganizationPage() {
 
   return (
     <>
-      <PageHeader title="Organization" description="Your company profile, shown to your team and on the sign-in page." />
+      <PageHeader title={t("organization.title")} description={t("organization.subtitle")} />
       {!canEdit && (
-        <Alert type="info" showIcon style={{ marginBottom: 16 }} title="Only owners can change the organization profile." />
+        <Alert type="info" showIcon style={{ marginBottom: 16 }} title={t("organization.onlyOwners")} />
       )}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>
-          <Card title="Logo">
+          <Card title={t("organization.logo")}>
             <Flex vertical align="center" gap={16}>
               <BrandLogo name={org.name} logoUrl={org.logoUrl} size={112} />
               {canEdit && (
@@ -92,87 +95,87 @@ export default function OrganizationPage() {
                   <Upload accept={LOGO_TYPES.join(",")} showUploadList={false}
                     beforeUpload={(file) => {
                       if (!LOGO_TYPES.includes(file.type)) {
-                        message.error("Use a PNG, JPEG or WebP image");
+                        message.error(t("errors.imageType"));
                       } else {
                         upload.mutate(file);
                       }
                       return false;
                     }}>
                     <Button icon={<UploadOutlined />} loading={upload.isPending}>
-                      {upload.isPending ? "Optimizing…" : org.logoUrl ? "Replace" : "Upload"}
+                      {upload.isPending ? t("organization.optimizing") : org.logoUrl ? t("organization.replace") : t("organization.upload")}
                     </Button>
                   </Upload>
                   {org.logoUrl && (
-                    <Popconfirm title="Remove the logo?" onConfirm={() => removeLogo.mutate()} okText="Remove">
-                      <Button icon={<DeleteOutlined />} danger loading={removeLogo.isPending}>Remove</Button>
+                    <Popconfirm title={t("organization.removeLogoConfirm")} onConfirm={() => removeLogo.mutate()} okText={t("common.remove")}>
+                      <Button icon={<DeleteOutlined />} danger loading={removeLogo.isPending}>{t("common.remove")}</Button>
                     </Popconfirm>
                   )}
                 </Flex>
               )}
               <Typography.Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
-                PNG, JPEG or WebP. Large images are resized automatically. A square image works best.
+                {t("organization.logoHelp")}
               </Typography.Text>
             </Flex>
           </Card>
-          <Card title="Web address" style={{ marginTop: 16 }}>
+          <Card title={t("organization.webAddress")} style={{ marginTop: 16 }}>
             <Typography.Paragraph copyable style={{ marginBottom: 4 }}>{tenantUrl(org.slug)}</Typography.Paragraph>
-            <Typography.Text type="secondary" style={{ fontSize: 13 }}>The address cannot be changed.</Typography.Text>
+            <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("organization.addressFixed")}</Typography.Text>
           </Card>
         </Col>
         <Col xs={24} lg={16}>
-          <Card title="Profile">
+          <Card title={t("organization.profile")}>
             <Form<UpdateOrganizationRequest> form={form} layout="vertical" requiredMark={false}
-              disabled={!canEdit || save.isPending} onFinish={(values) => save.mutate(values)}>
+              disabled={!canEdit || save.isPending} onFinish={(values) => save.mutate({ ...values, currency: CURRENCY })}>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item name="name" label="Display name" rules={[{ required: true, message: "Enter a name" }, { max: 150 }]}>
+                  <Form.Item name="name" label={t("organization.displayName")} rules={[{ required: true, message: t("validation.enterName") }, { max: 150 }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="legalName" label="Legal name" rules={[{ max: 150 }]}>
+                  <Form.Item name="legalName" label={t("organization.legalName")} rules={[{ max: 150 }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="email" label="Contact email" rules={[{ type: "email", message: "Enter a valid email" }]}>
+                  <Form.Item name="email" label={t("organization.contactEmail")} rules={[{ type: "email", message: t("validation.validEmail") }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="phone" label="Phone" rules={[{ max: 30 }]}>
+                  <Form.Item name="phone" label={t("common.phone")} rules={[{ max: 30 }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="country" label="Country" rules={[{ required: true }]}>
-                    <Select showSearch={{ optionFilterProp: "label" }} options={countryOptions(org.country)} />
+                  <Form.Item name="country" label={t("common.country")} rules={[{ required: true }]}>
+                    <Select showSearch={{ optionFilterProp: "label" }} options={countryOptions(org.country, lang)} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="city" label="City" rules={[{ max: 80 }]}>
+                  <Form.Item name="city" label={t("common.city")} rules={[{ max: 80 }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24}>
-                  <Form.Item name="address" label="Address" rules={[{ max: 255 }]}>
+                  <Form.Item name="address" label={t("common.address")} rules={[{ max: 255 }]}>
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="currency" label="Currency" rules={[{ required: true }]}>
-                    <Select showSearch={{ optionFilterProp: "label" }} options={currencyOptions(org.currency)} />
+                  <Form.Item label={t("organization.currency")}>
+                    <Input value={t("organization.currencyFixed")} disabled />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="timezone" label="Time zone" rules={[{ required: true }]}>
+                  <Form.Item name="timezone" label={t("organization.timezone")} rules={[{ required: true }]}>
                     <Select showSearch={{ optionFilterProp: "label" }} options={timezones} />
                   </Form.Item>
                 </Col>
               </Row>
               {canEdit && (
                 <Flex justify="end">
-                  <Button type="primary" htmlType="submit" loading={save.isPending}>Save changes</Button>
+                  <Button type="primary" htmlType="submit" loading={save.isPending}>{t("common.saveChanges")}</Button>
                 </Flex>
               )}
             </Form>

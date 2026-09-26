@@ -6,6 +6,7 @@ import { Alert, Button, Col, Divider, Form, Input, Row, Select, Space, Typograph
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthCard } from "@/components/AuthCard";
+import { useT } from "@/i18n/provider";
 import { errorMessage, hasFieldErrors } from "@/lib/api/errors";
 import { publicApi } from "@/lib/api/public-api";
 import type { RegisterRequest } from "@/lib/api/types";
@@ -15,12 +16,6 @@ import { navigateToOrigin } from "@/lib/navigation";
 import { countryOptions } from "@/lib/reference-data";
 
 type RegisterForm = RegisterRequest & { confirm: string };
-
-const REASONS: Record<string, string> = {
-  INVALID_FORMAT: "Use 3–30 lowercase letters, digits and single hyphens",
-  RESERVED: "This address is reserved",
-  TAKEN: "This address is already taken",
-};
 
 function toRequest(values: RegisterForm): RegisterRequest {
   return {
@@ -47,11 +42,12 @@ function useDebounced<T>(value: T, delay: number): T {
 }
 
 export default function RegisterPage() {
+  const { t, lang } = useT();
   const [form] = Form.useForm<RegisterForm>();
   const slugEdited = useRef(false);
   const slug = (Form.useWatch("slug", form) ?? "").trim().toLowerCase();
   const debouncedSlug = useDebounced(slug, 400);
-  const countries = useMemo(() => countryOptions(), []);
+  const countries = useMemo(() => countryOptions(undefined, lang), [lang]);
   const availability = useQuery({
     queryKey: ["slug-availability", debouncedSlug],
     queryFn: () => publicApi.slugAvailability(debouncedSlug),
@@ -69,19 +65,19 @@ export default function RegisterPage() {
 
   const checking = slug.length >= 3 && (slug !== debouncedSlug || availability.isFetching);
   const status = availability.data && availability.data.slug === slug ? availability.data : undefined;
-  let slugHelp: ReactNode = "Your team will sign in at this address. It cannot be changed later.";
+  let slugHelp: ReactNode = t("register.addressHelp");
   if (checking) {
-    slugHelp = <span><LoadingOutlined /> Checking…</span>;
+    slugHelp = <span><LoadingOutlined /> {t("register.checking")}</span>;
   } else if (status?.available) {
-    slugHelp = <Typography.Text type="success"><CheckCircleFilled /> Available</Typography.Text>;
+    slugHelp = <Typography.Text type="success"><CheckCircleFilled /> {t("register.available")}</Typography.Text>;
   } else if (status?.reason) {
-    slugHelp = <Typography.Text type="danger"><CloseCircleFilled /> {REASONS[status.reason]}</Typography.Text>;
+    slugHelp = <Typography.Text type="danger"><CloseCircleFilled /> {status.reason === "INVALID_FORMAT" || status.reason === "RESERVED" || status.reason === "TAKEN" ? t(`register.reason${status.reason}`) : status.reason}</Typography.Text>;
   }
 
   return (
-    <AuthCard title="Register your company" width={640}
-      subtitle="Create your organization and your owner account."
-      footer={<Typography.Text type="secondary">Already registered? <Link href="/#sign-in">Sign in</Link></Typography.Text>}>
+    <AuthCard title={t("register.title")} width={640}
+      subtitle={t("register.subtitle")}
+      footer={<Typography.Text type="secondary">{t("register.alreadyRegistered")} <Link href="/#sign-in">{t("auth.signIn")}</Link></Typography.Text>}>
       {register.error && !hasFieldErrors(register.error) && (
         <Alert type="error" showIcon title={errorMessage(register.error)} style={{ marginBottom: 16 }} />
       )}
@@ -95,19 +91,19 @@ export default function RegisterPage() {
             form.setFieldValue("slug", suggestSlug(changed.companyName ?? ""));
           }
         }}>
-        <Divider titlePlacement="start" plain style={{ marginTop: 0 }}>Company</Divider>
+        <Divider titlePlacement="start" plain style={{ marginTop: 0 }}>{t("register.company")}</Divider>
         <Row gutter={16}>
           <Col xs={24}>
-            <Form.Item name="companyName" label="Company name" rules={[{ required: true, message: "Enter the company name" }, { max: 150 }]}>
+            <Form.Item name="companyName" label={t("register.companyName")} rules={[{ required: true, message: t("register.enterCompanyName") }, { max: 150 }]}>
               <Input autoFocus placeholder="Hodan Estates" />
             </Form.Item>
           </Col>
           <Col xs={24}>
-            <Form.Item label="Web address" required extra={slugHelp}
+            <Form.Item label={t("register.webAddress")} required extra={slugHelp}
               validateStatus={status && !status.available && !checking ? "error" : undefined}>
               <Space.Compact style={{ width: "100%" }}>
                 <Form.Item name="slug" noStyle normalize={(value: string) => value.toLowerCase()}
-                  rules={[{ required: true, message: "Choose a web address" }]}>
+                  rules={[{ required: true, message: t("register.chooseAddress") }]}>
                   <Input placeholder="hodan-estates" maxLength={30} />
                 </Form.Item>
                 <Space.Addon>.{tenantHostSuffix()}</Space.Addon>
@@ -115,57 +111,57 @@ export default function RegisterPage() {
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="companyEmail" label="Company email" rules={[{ required: true, type: "email", message: "Enter a valid email" }]}>
+            <Form.Item name="companyEmail" label={t("register.companyEmail")} rules={[{ required: true, type: "email", message: t("validation.validEmail") }]}>
               <Input placeholder="info@company.so" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="companyPhone" label="Company phone (optional)" rules={[{ max: 30 }]}>
+            <Form.Item name="companyPhone" label={t("register.companyPhone")} rules={[{ max: 30 }]}>
               <Input />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="country" label="Country">
+            <Form.Item name="country" label={t("common.country")}>
               <Select showSearch={{ optionFilterProp: "label" }} options={countries} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="city" label="City (optional)" rules={[{ max: 80 }]}>
+            <Form.Item name="city" label={t("common.cityOptional")} rules={[{ max: 80 }]}>
               <Input />
             </Form.Item>
           </Col>
         </Row>
-        <Divider titlePlacement="start" plain>Your account</Divider>
+        <Divider titlePlacement="start" plain>{t("register.yourAccount")}</Divider>
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item name="ownerFullName" label="Full name" rules={[{ required: true, message: "Enter your name" }, { max: 150 }]}>
+            <Form.Item name="ownerFullName" label={t("common.fullName")} rules={[{ required: true, message: t("validation.enterName") }, { max: 150 }]}>
               <Input autoComplete="name" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="ownerPhone" label="Phone (optional)" rules={[{ max: 30 }]}>
+            <Form.Item name="ownerPhone" label={t("common.phoneOptional")} rules={[{ max: 30 }]}>
               <Input autoComplete="tel" />
             </Form.Item>
           </Col>
           <Col xs={24}>
-            <Form.Item name="ownerEmail" label="Email" rules={[{ required: true, type: "email", message: "Enter a valid email" }]}>
+            <Form.Item name="ownerEmail" label={t("common.email")} rules={[{ required: true, type: "email", message: t("validation.validEmail") }]}>
               <Input autoComplete="email" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="password" label="Password" rules={passwordRules}
-              extra="At least 8 characters with a letter and a digit.">
+            <Form.Item name="password" label={t("common.password")} rules={passwordRules(t)}
+              extra={t("validation.passwordHelp")}>
               <Input.Password autoComplete="new-password" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="confirm" label="Confirm password" dependencies={["password"]} rules={confirmPasswordRule("password")}>
+            <Form.Item name="confirm" label={t("common.confirmPassword")} dependencies={["password"]} rules={confirmPasswordRule(t, "password")}>
               <Input.Password autoComplete="new-password" />
             </Form.Item>
           </Col>
         </Row>
         <Button type="primary" htmlType="submit" block size="large" loading={register.isPending}>
-          {register.isPending ? "Creating your organization…" : "Create organization"}
+          {register.isPending ? t("register.creating") : t("register.create")}
         </Button>
       </Form>
     </AuthCard>

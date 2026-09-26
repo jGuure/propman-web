@@ -8,8 +8,9 @@ import { useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/errors";
 import type { Amenity, Building, PropertyDetails, PropertyStructure } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
+import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
-import { floorLabel, UNIT_TYPE_LABELS } from "@/lib/labels";
+import { useLabels } from "@/lib/labels";
 import { useAllowedTransitions } from "@/lib/portfolio-hooks";
 import { AmenityEditor } from "../AmenityEditor";
 import { BuildingFormModal } from "../BuildingFormModal";
@@ -52,11 +53,12 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
   property: PropertyDetails; editable: boolean; onSelectFlat: (id: string) => void;
 }) {
   const { api } = useTenant();
+  const { t, tn } = useT();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const amenities = useMutation({
     mutationFn: (ids: string[]) => api.setPropertyAmenities(p.id, ids),
-    onSuccess: () => { message.success("Shared amenities saved"); invalidatePortfolio(queryClient); },
+    onSuccess: () => { message.success(t("explorer.sharedSaved")); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const mapUrl = p.latitude != null && p.longitude != null
@@ -66,33 +68,33 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
   return (
     <>
       <Typography.Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
-        Select a flat or an apartment in the drawing to see its details here.
+        {t("explorer.selectHint")}
       </Typography.Text>
-      <Block title="Shared by everyone">
+      <Block title={t("explorer.sharedByEveryone")}>
         <AmenityEditor scope="PROPERTY" value={p.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
       </Block>
       {flats.length > 0 && (
-        <Block title="Flats">
+        <Block title={t("explorer.flats")}>
           <Flex vertical gap={6}>
             {flats.map((b) => (
               <button key={b.id} type="button" onClick={() => onSelectFlat(b.id)}
                 style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #eef0f0", borderRadius: 8, background: "#fff", cursor: "pointer" }}>
-                <Flex justify="space-between"><Typography.Text strong>{b.name}</Typography.Text><Typography.Text type="secondary">{b.unitStats.total} apartments</Typography.Text></Flex>
+                <Flex justify="space-between"><Typography.Text strong>{b.name}</Typography.Text><Typography.Text type="secondary">{tn("count.apartments", b.unitStats.total)}</Typography.Text></Flex>
                 <Progress percent={Math.round(b.unitStats.occupancyRate * 100)} size="small" style={{ margin: 0 }} />
               </button>
             ))}
           </Flex>
         </Block>
       )}
-      <Block title="About">
+      <Block title={t("explorer.about")}>
         <Descriptions column={1} size="small">
-          <Descriptions.Item label="Address">{p.address ?? "—"}</Descriptions.Item>
-          <Descriptions.Item label="Year built">{p.yearBuilt ?? "—"}</Descriptions.Item>
-          {mapUrl && <Descriptions.Item label="Map"><a href={mapUrl} target="_blank" rel="noreferrer"><EnvironmentOutlined /> Google Maps</a></Descriptions.Item>}
+          <Descriptions.Item label={t("common.address")}>{p.address ?? "—"}</Descriptions.Item>
+          <Descriptions.Item label={t("properties.yearBuilt")}>{p.yearBuilt ?? "—"}</Descriptions.Item>
+          {mapUrl && <Descriptions.Item label={t("explorer.map")}><a href={mapUrl} target="_blank" rel="noreferrer"><EnvironmentOutlined /> {t("explorer.googleMaps")}</a></Descriptions.Item>}
         </Descriptions>
         {p.description && <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>{p.description}</Typography.Paragraph>}
       </Block>
-      <Block title={`Photos (${p.photos.length}/15)`}>
+      <Block title={t("explorer.photos", { count: p.photos.length, max: 15 })}>
         <PhotoGallery owner="properties" ownerId={p.id} photos={p.photos} max={15} canEdit={editable} onChanged={() => invalidatePortfolio(queryClient)} />
       </Block>
     </>
@@ -103,18 +105,20 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
 
 export function FlatInspector({ flat, property, editable }: { flat: Building; property: PropertyDetails; editable: boolean }) {
   const { api } = useTenant();
+  const { t, tn } = useT();
+  const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const amenities = useMutation({
     mutationFn: (ids: string[]) => api.setBuildingAmenities(flat.id, ids),
-    onSuccess: () => { message.success("Flat amenities saved"); invalidatePortfolio(queryClient); },
+    onSuccess: () => { message.success(t("explorer.flatAmenitiesSaved")); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const archive = useMutation({
     mutationFn: () => (flat.status === "ARCHIVED" ? api.restoreBuilding(flat.id) : api.archiveBuilding(flat.id)),
-    onSuccess: (b) => { message.success(b.status === "ARCHIVED" ? `${b.name} archived` : `${b.name} restored`); invalidatePortfolio(queryClient); },
+    onSuccess: (b) => { message.success(t(b.status === "ARCHIVED" ? "explorer.archived" : "explorer.restored", { name: b.name })); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const s = flat.unitStats;
@@ -125,33 +129,33 @@ export function FlatInspector({ flat, property, editable }: { flat: Building; pr
         <div>
           <Typography.Title level={4} style={{ margin: 0 }}>{flat.name}</Typography.Title>
           <Typography.Text type="secondary">
-            Code {flat.code} · {floorLabel(-flat.basementFloors)} to {floorLabel(flat.floorsCount).toLowerCase()}{flat.hasLift ? " · lift" : ""}
+            {t("explorer.flatCode", { code: flat.code })} · {t("explorer.floorsRange", { from: labels.floor(-flat.basementFloors), to: labels.floor(flat.floorsCount).toLowerCase() })}{flat.hasLift ? ` · ${t("explorer.lift")}` : ""}
           </Typography.Text>
         </div>
-        {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>}
+        {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
       </Flex>
-      <Block title={`${s.total} apartments · ${formatPercent(s.occupancyRate)} occupied`}>
+      <Block title={t("explorer.flatStats", { apartments: tn("count.apartments", s.total), percent: formatPercent(s.occupancyRate) })}>
         <StatusBar counts={{ VACANT: s.vacant, RESERVED: s.reserved, OCCUPIED: s.occupied, MAINTENANCE: s.maintenance, INACTIVE: s.inactive }} />
       </Block>
       {editable && (
         <Flex gap={8} wrap style={{ marginBottom: 20 }}>
-          <Button icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add apartment</Button>
-          <Link href={`/properties/${property.id}/bulk?flat=${flat.id}`}><Button type="primary" icon={<AppstoreAddOutlined />}>Add many</Button></Link>
+          <Button icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>{t("explorer.addApartment")}</Button>
+          <Link href={`/properties/${property.id}/bulk?flat=${flat.id}`}><Button type="primary" icon={<AppstoreAddOutlined />}>{t("explorer.addManyShort")}</Button></Link>
         </Flex>
       )}
-      <Block title="Shared by this flat">
+      <Block title={t("explorer.sharedByFlat")}>
         <AmenityEditor scope="PROPERTY" value={flat.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
-        <Inherited label="Also from the property" amenities={property.amenities} />
+        <Inherited label={t("explorer.alsoFromProperty")} amenities={property.amenities} />
       </Block>
       {flat.description && <Typography.Paragraph type="secondary">{flat.description}</Typography.Paragraph>}
       {editable && (
         <>
           <Divider />
           <Button danger icon={<InboxOutlined />} onClick={() => modal.confirm({
-            title: `Archive ${flat.name}?`, okText: "Archive", okButtonProps: { danger: true },
-            content: "Its apartments are archived too. Occupied or reserved apartments must be freed first.",
+            title: t("explorer.archiveFlatTitle", { name: flat.name }), okText: t("common.archive"), okButtonProps: { danger: true },
+            content: t("explorer.archiveFlatText"),
             onOk: () => archive.mutateAsync(),
-          })}>Archive flat</Button>
+          })}>{t("explorer.archiveFlat")}</Button>
         </>
       )}
       <BuildingFormModal open={editOpen} propertyId={property.id} building={flat} onClose={() => setEditOpen(false)} />
@@ -166,6 +170,8 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   unitId: string; property: PropertyDetails; structure: PropertyStructure; flatAmenities: { name: string; amenities: Amenity[] } | null; editable: boolean;
 }) {
   const { api } = useTenant();
+  const { t } = useT();
+  const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [statusOpen, setStatusOpen] = useState(false);
@@ -175,12 +181,12 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   const transitions = useAllowedTransitions(unit.data?.status);
   const amenities = useMutation({
     mutationFn: (ids: string[]) => api.setUnitAmenities(unitId, ids),
-    onSuccess: () => { message.success("Amenities saved"); invalidatePortfolio(queryClient); },
+    onSuccess: () => { message.success(t("explorer.amenitiesSaved")); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const archive = useMutation({
     mutationFn: () => (unit.data?.archivedAt ? api.restoreUnit(unitId) : api.archiveUnit(unitId)),
-    onSuccess: (u) => { message.success(u.archivedAt ? "Apartment archived" : "Apartment restored"); invalidatePortfolio(queryClient); },
+    onSuccess: (u) => { message.success(t(u.archivedAt ? "explorer.apartmentArchived" : "explorer.apartmentRestored")); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
 
@@ -204,20 +210,20 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
             <UnitStatusTag status={u.status} />
           </Space>
           <Typography.Text type="secondary" style={{ display: "block" }}>
-            {UNIT_TYPE_LABELS[u.type]} · {floorLabel(u.floor)}{u.buildingName ? ` · ${u.buildingName}` : ""}
+            {labels.unitType(u.type)} · {labels.floor(u.floor)}{u.buildingName ? ` · ${u.buildingName}` : ""}
           </Typography.Text>
         </div>
-        <Link href={`/units/${u.id}`}><Button type="text" icon={<ExportOutlined />} aria-label="Open apartment page" /></Link>
+        <Link href={`/units/${u.id}`}><Button type="text" icon={<ExportOutlined />} aria-label={t("explorer.openPage")} /></Link>
       </Flex>
       <Flex gap={8} wrap style={{ marginBottom: 16 }}>
-        {transitions.length > 0 && <Button type="primary" icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>Change status</Button>}
-        {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>}
+        {transitions.length > 0 && <Button type="primary" icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>}
+        {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
       </Flex>
       <Flex gap={8} style={{ marginBottom: 20 }}>
         {[
-          ["Rent", formatMoney(u.baseRent, u.currency)],
-          ["Bed / bath", `${u.bedrooms} / ${u.bathrooms}`],
-          ["Size", u.sizeSqm ? `${u.sizeSqm} m²` : "—"],
+          [t("common.rent"), formatMoney(u.baseRent)],
+          [t("explorer.bedBath"), `${u.bedrooms} / ${u.bathrooms}`],
+          [t("common.size"), u.sizeSqm ? `${u.sizeSqm} m²` : "—"],
         ].map(([label, value]) => (
           <div key={label} style={{ flex: 1, padding: "8px 10px", background: "#f6f8f8", borderRadius: 8 }}>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>{label}</Typography.Text>
@@ -225,28 +231,28 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
           </div>
         ))}
       </Flex>
-      <Block title="Rooms">
+      <Block title={t("explorer.rooms")}>
         <RoomsEditor unitId={u.id} canEdit={editable} compact extra={source && source.rooms.length > 0 && (
-          <Button icon={<CopyOutlined />} onClick={() => setCopyOpen(true)}>Copy to…</Button>
+          <Button icon={<CopyOutlined />} onClick={() => setCopyOpen(true)}>{t("explorer.copyTo")}</Button>
         )} />
       </Block>
-      <Block title="Amenities">
+      <Block title={t("apartments.amenities")}>
         <AmenityEditor scope="UNIT" value={u.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
-        {flatAmenities && <Inherited label={`From ${flatAmenities.name}`} amenities={flatAmenities.amenities} />}
-        <Inherited label="From the property" amenities={property.amenities} />
+        {flatAmenities && <Inherited label={t("explorer.fromFlat", { name: flatAmenities.name })} amenities={flatAmenities.amenities} />}
+        <Inherited label={t("explorer.fromProperty")} amenities={property.amenities} />
       </Block>
-      <Block title={`Photos (${u.photos.length}/10)`}>
+      <Block title={t("explorer.photos", { count: u.photos.length, max: 10 })}>
         <PhotoGallery owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={editable} onChanged={() => invalidatePortfolio(queryClient)} />
       </Block>
-      {u.notes && <Block title="Notes"><Typography.Paragraph>{u.notes}</Typography.Paragraph></Block>}
+      {u.notes && <Block title={t("common.notes")}><Typography.Paragraph>{u.notes}</Typography.Paragraph></Block>}
       {editable && (
         <Button danger={!u.archivedAt} icon={u.archivedAt ? <UndoOutlined /> : <InboxOutlined />} disabled={!u.archivedAt && taken}
-          title={taken ? "Occupied or reserved apartments cannot be archived" : undefined}
+          title={taken ? t("explorer.cannotArchiveTaken") : undefined}
           onClick={() => (u.archivedAt ? archive.mutate() : modal.confirm({
-            title: `Archive apartment ${u.unitNumber}?`, okText: "Archive", okButtonProps: { danger: true },
-            content: "It will be hidden from lists and the drawing. You can restore it later.", onOk: () => archive.mutateAsync(),
+            title: t("explorer.archiveApartmentTitle", { number: u.unitNumber }), okText: t("common.archive"), okButtonProps: { danger: true },
+            content: t("explorer.archiveApartmentText"), onOk: () => archive.mutateAsync(),
           }))}>
-          {u.archivedAt ? "Restore apartment" : "Archive apartment"}
+          {u.archivedAt ? t("explorer.restoreApartment") : t("explorer.archiveApartment")}
         </Button>
       )}
       <ChangeStatusModal open={statusOpen} unitId={u.id} unitNumber={u.unitNumber} status={u.status} onClose={() => setStatusOpen(false)} />

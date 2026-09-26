@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App, ConfigProvider } from "antd";
 import { useState, type ReactNode } from "react";
 import { isApiError } from "@/lib/api/errors";
+import type { Lang } from "@/i18n/core";
+import { I18nProvider } from "@/i18n/provider";
 import { theme } from "@/lib/theme";
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({ lang, children }: { lang: Lang; children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -21,10 +23,12 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
   return (
-    <ConfigProvider theme={theme}>
-      <App>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      </App>
-    </ConfigProvider>
+    <I18nProvider initialLang={lang}>
+      <ConfigProvider theme={theme}>
+        <App>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </App>
+      </ConfigProvider>
+    </I18nProvider>
   );
 }

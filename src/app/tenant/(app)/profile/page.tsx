@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Card, Col, Descriptions, Flex, Form, Input, Row } from "antd";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleTag } from "@/components/tags";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import { useMe, useTenant } from "@/lib/auth/tenant-context";
 import { fromNow } from "@/lib/format";
@@ -23,6 +24,7 @@ interface PasswordForm {
 export default function ProfilePage() {
   const { api } = useTenant();
   const { data: me } = useMe();
+  const { t } = useT();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
   const [profileForm] = Form.useForm<ProfileForm>();
@@ -32,7 +34,7 @@ export default function ProfilePage() {
     mutationFn: (values: ProfileForm) => api.updateProfile({ fullName: values.fullName, phone: values.phone || null }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      message.success("Profile saved");
+      message.success(t("profile.saved"));
     },
     onError: (error) => {
       if (!applyFieldErrors(profileForm, error)) {
@@ -44,7 +46,7 @@ export default function ProfilePage() {
     mutationFn: (values: PasswordForm) => api.changePassword(values.currentPassword, values.newPassword),
     onSuccess: () => {
       passwordForm.resetFields();
-      message.success("Password changed. Other devices have been signed out.");
+      message.success(t("profile.changed"));
     },
     onError: (error) => {
       if (!applyFieldErrors(passwordForm, error)) {
@@ -60,48 +62,48 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="My profile" />
+      <PageHeader title={t("profile.title")} />
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="Personal details">
+          <Card title={t("profile.personal")}>
             <Descriptions column={1} size="small" style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
-              <Descriptions.Item label="Role"><RoleTag role={user.role} /></Descriptions.Item>
-              <Descriptions.Item label="Last sign-in">{fromNow(user.lastLoginAt)}</Descriptions.Item>
+              <Descriptions.Item label={t("common.email")}>{user.email}</Descriptions.Item>
+              <Descriptions.Item label={t("profile.role")}><RoleTag role={user.role} /></Descriptions.Item>
+              <Descriptions.Item label={t("profile.lastSignIn")}>{fromNow(user.lastLoginAt)}</Descriptions.Item>
             </Descriptions>
             <Form<ProfileForm> form={profileForm} layout="vertical" requiredMark={false}
               initialValues={{ fullName: user.fullName, phone: user.phone ?? undefined }}
               disabled={saveProfile.isPending} onFinish={(values) => saveProfile.mutate(values)}>
-              <Form.Item name="fullName" label="Full name" rules={[{ required: true, message: "Enter your name" }, { max: 150 }]}>
+              <Form.Item name="fullName" label={t("common.fullName")} rules={[{ required: true, message: t("validation.enterName") }, { max: 150 }]}>
                 <Input autoComplete="name" />
               </Form.Item>
-              <Form.Item name="phone" label="Phone" rules={[{ max: 30 }]}>
+              <Form.Item name="phone" label={t("common.phone")} rules={[{ max: 30 }]}>
                 <Input autoComplete="tel" />
               </Form.Item>
               <Flex justify="end">
-                <Button type="primary" htmlType="submit" loading={saveProfile.isPending}>Save</Button>
+                <Button type="primary" htmlType="submit" loading={saveProfile.isPending}>{t("common.save")}</Button>
               </Flex>
             </Form>
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Change password">
+          <Card title={t("profile.changePassword")}>
             <Form<PasswordForm> form={passwordForm} layout="vertical" requiredMark={false}
               disabled={changePassword.isPending} onFinish={(values) => changePassword.mutate(values)}>
-              <Form.Item name="currentPassword" label="Current password"
-                rules={[{ required: true, message: "Enter your current password" }]}>
+              <Form.Item name="currentPassword" label={t("profile.currentPassword")}
+                rules={[{ required: true, message: t("profile.enterCurrent") }]}>
                 <Input.Password autoComplete="current-password" />
               </Form.Item>
-              <Form.Item name="newPassword" label="New password" rules={passwordRules}
-                extra="At least 8 characters with a letter and a digit. Other devices will be signed out.">
+              <Form.Item name="newPassword" label={t("profile.newPassword")} rules={passwordRules(t)}
+                extra={t("profile.newPasswordHelp")}>
                 <Input.Password autoComplete="new-password" />
               </Form.Item>
-              <Form.Item name="confirm" label="Confirm new password" dependencies={["newPassword"]}
-                rules={confirmPasswordRule("newPassword")}>
+              <Form.Item name="confirm" label={t("profile.confirmNew")} dependencies={["newPassword"]}
+                rules={confirmPasswordRule(t, "newPassword")}>
                 <Input.Password autoComplete="new-password" />
               </Form.Item>
               <Flex justify="end">
-                <Button type="primary" htmlType="submit" loading={changePassword.isPending}>Change password</Button>
+                <Button type="primary" htmlType="submit" loading={changePassword.isPending}>{t("profile.changePassword")}</Button>
               </Flex>
             </Form>
           </Card>

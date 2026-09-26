@@ -1,40 +1,11 @@
-import type { AmenityScope, PropertyStatus, PropertyType, RoomType, UnitStatus, UnitType } from "@/lib/api/types";
+"use client";
 
-export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
-  BEDROOM: "Bedroom",
-  MASTER_BEDROOM: "Master bedroom",
-  LIVING_ROOM: "Living room",
-  DINING_ROOM: "Dining room",
-  KITCHEN: "Kitchen",
-  BATHROOM: "Bathroom",
-  TOILET: "Toilet",
-  STORE: "Store room",
-  BALCONY: "Balcony",
-  OFFICE: "Office / study",
-  OTHER: "Other",
-};
+import { useMemo } from "react";
+import type { AmenityScope, PropertyStatus, PropertyType, RoomType, TenantStatus, UnitStatus, UnitType, UserRole, UserStatus } from "@/lib/api/types";
+import { useT, type TKey } from "@/i18n/provider";
+import type { Vars } from "@/i18n/core";
 
-export const UNIT_TYPE_LABELS: Record<UnitType, string> = {
-  STUDIO: "Studio",
-  ONE_BEDROOM: "1 bedroom",
-  TWO_BEDROOM: "2 bedrooms",
-  THREE_BEDROOM: "3 bedrooms",
-  FOUR_PLUS_BEDROOM: "4+ bedrooms",
-  SHOP: "Shop",
-  OFFICE: "Office",
-  WAREHOUSE: "Warehouse",
-  OTHER: "Other",
-};
-
-export const UNIT_STATUS_LABELS: Record<UnitStatus, string> = {
-  VACANT: "Vacant",
-  RESERVED: "Reserved",
-  OCCUPIED: "Occupied",
-  MAINTENANCE: "Maintenance",
-  INACTIVE: "Inactive",
-};
-
-/** Tag colors and tile colors of unit statuses (grid, tags, dashboard). */
+/** Tag colors and tile colors of unit statuses (explorer, tags, dashboard). */
 export const UNIT_STATUS_COLORS: Record<UnitStatus, { tag: string; fill: string; border: string; text: string }> = {
   VACANT: { tag: "green", fill: "#f0fdf4", border: "#86efac", text: "#166534" },
   RESERVED: { tag: "gold", fill: "#fefce8", border: "#fde047", text: "#854d0e" },
@@ -51,38 +22,50 @@ export const UNIT_STATUS_BAR: Record<UnitStatus, string> = {
   INACTIVE: "#a1a1aa",
 };
 
-export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
-  RESIDENTIAL: "Residential",
-  COMMERCIAL: "Commercial",
-  MIXED: "Mixed use",
-};
-
-export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
-  ACTIVE: "Active",
-  INACTIVE: "Inactive",
-  ARCHIVED: "Archived",
-};
-
 export const PROPERTY_STATUS_COLORS: Record<PropertyStatus, string> = {
   ACTIVE: "green",
   INACTIVE: "orange",
   ARCHIVED: "default",
 };
 
-export const AMENITY_SCOPE_LABELS: Record<AmenityScope, string> = {
-  UNIT: "Apartments",
-  PROPERTY: "Shared (property or flat)",
-  BOTH: "Shared and apartments",
-};
+export const UNIT_STATUSES: UnitStatus[] = ["VACANT", "RESERVED", "OCCUPIED", "MAINTENANCE", "INACTIVE"];
+export const UNIT_TYPES: UnitType[] = ["STUDIO", "ONE_BEDROOM", "TWO_BEDROOM", "THREE_BEDROOM", "FOUR_PLUS_BEDROOM",
+  "SHOP", "OFFICE", "WAREHOUSE", "OTHER"];
+export const PROPERTY_TYPES: PropertyType[] = ["RESIDENTIAL", "COMMERCIAL", "MIXED"];
+export const PROPERTY_STATUSES: PropertyStatus[] = ["ACTIVE", "INACTIVE", "ARCHIVED"];
+export const ROOM_TYPES: RoomType[] = ["BEDROOM", "MASTER_BEDROOM", "LIVING_ROOM", "DINING_ROOM", "KITCHEN", "BATHROOM",
+  "TOILET", "STORE", "BALCONY", "OFFICE", "OTHER"];
+export const AMENITY_SCOPES: AmenityScope[] = ["UNIT", "PROPERTY", "BOTH"];
+export const USER_ROLES: UserRole[] = ["OWNER", "MANAGER", "ACCOUNTANT", "STAFF"];
+export const USER_STATUSES: UserStatus[] = ["ACTIVE", "INVITED", "DISABLED"];
 
 export const SOMALI_CITIES = [
   "Mogadishu", "Hargeisa", "Garowe", "Kismayo", "Baidoa", "Bosaso", "Beledweyne", "Galkayo", "Berbera", "Burao",
   "Jowhar", "Marka",
 ];
 
-export function floorLabel(floor: number): string {
+/** "Ground" / "Floor 3" / "Basement 1" with any translate function. */
+export function floorText(t: (key: TKey, vars?: Vars) => string, floor: number): string {
   if (floor === 0) {
-    return "Ground";
+    return t("floor.ground");
   }
-  return floor < 0 ? `Basement ${-floor}` : `Floor ${floor}`;
+  return floor < 0 ? t("floor.basement", { n: -floor }) : t("floor.floor", { n: floor });
+}
+
+/** Translated names of statuses, types, roles and floors in the current language. */
+export function useLabels() {
+  const { t } = useT();
+  return useMemo(() => ({
+    unitStatus: (s: UnitStatus) => t(`unitStatus.${s}`),
+    unitType: (s: UnitType) => t(`unitType.${s}`),
+    propertyType: (s: PropertyType) => t(`propertyType.${s}`),
+    propertyStatus: (s: PropertyStatus) => t(`propertyStatus.${s}`),
+    roomType: (s: RoomType) => t(`roomType.${s}`),
+    amenityScope: (s: AmenityScope) => t(`amenityScope.${s}`),
+    role: (s: UserRole) => t(`roles.${s}`),
+    roleHelp: (s: UserRole) => t(`roleHelp.${s}`),
+    userStatus: (s: UserStatus) => t(`userStatus.${s}`),
+    tenantStatus: (s: TenantStatus) => s.charAt(0) + s.slice(1).toLowerCase(),
+    floor: (n: number) => floorText(t, n),
+  }), [t]);
 }

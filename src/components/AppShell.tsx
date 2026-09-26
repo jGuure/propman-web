@@ -5,6 +5,7 @@ import { Avatar, Button, Dropdown, Flex, Grid, Layout, Menu, Typography, type Me
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { LanguageSwitcher, useT } from "@/i18n/provider";
 
 export interface NavItem {
   key: string;
@@ -22,11 +23,14 @@ interface AppShellProps {
   onSignOut: () => void;
   /** Strip this prefix from the path before matching nav items (rewritten areas). */
   pathPrefix: string;
+  /** Translated texts and the EN / SO switcher (tenant area); the platform admin area stays in English. */
+  translated?: boolean;
   children: ReactNode;
 }
 
 /** Signed-in layout: collapsible sidebar, top bar with the user menu, content area. */
-export function AppShell({ brand, nav, userName, userDetail, userMenu, onSignOut, pathPrefix, children }: AppShellProps) {
+export function AppShell({ brand, nav, userName, userDetail, userMenu, onSignOut, pathPrefix, translated = false, children }: AppShellProps) {
+  const { t } = useT();
   const screens = Grid.useBreakpoint();
   const [collapsed, setCollapsed] = useState(false);
   const path = usePathname().replace(new RegExp(`^${pathPrefix}(?=/|$)`), "") || "/";
@@ -36,7 +40,7 @@ export function AppShell({ brand, nav, userName, userDetail, userMenu, onSignOut
   const items: MenuProps["items"] = [
     ...(userMenu ?? []),
     ...(userMenu && userMenu.length ? [{ type: "divider" as const }] : []),
-    { key: "sign-out", icon: <LogoutOutlined />, label: "Sign out", onClick: onSignOut },
+    { key: "sign-out", icon: <LogoutOutlined />, label: translated ? t("common.signOut") : "Sign out", onClick: onSignOut },
   ];
 
   return (
@@ -49,9 +53,11 @@ export function AppShell({ brand, nav, userName, userDetail, userMenu, onSignOut
       <Layout>
         <Layout.Header style={{ padding: "0 16px", borderBottom: "1px solid #eef0f0" }}>
           <Flex justify="space-between" align="center" style={{ height: "100%" }}>
-            <Button type="text" aria-label="Toggle menu"
+            <Button type="text" aria-label={translated ? t("nav.toggleMenu") : "Toggle menu"}
               icon={isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!isCollapsed)} />
+            <Flex align="center" gap={4}>
+            {translated && <LanguageSwitcher />}
             <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
               <Button type="text" style={{ height: 48 }}>
                 <Flex align="center" gap={8}>
@@ -66,6 +72,7 @@ export function AppShell({ brand, nav, userName, userDetail, userMenu, onSignOut
                 </Flex>
               </Button>
             </Dropdown>
+            </Flex>
           </Flex>
         </Layout.Header>
         <Layout.Content style={{ padding: screens.md ? 24 : 12 }}>

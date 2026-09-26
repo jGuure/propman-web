@@ -8,6 +8,9 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
   filters, apartment drawer and page (status changes, history, rooms, photos), a wizard to add many apartments
   with live preview, and amenities settings.
 
+- **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
+  and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
+
 Names in the app: a **flat** is a building/block of a property, an **apartment** is a rentable unit (flat, shop,
 office), and **rooms** describe an apartment. The API calls them `building`, `unit` and `room`.
 
@@ -111,8 +114,22 @@ photos, and future modules): resized to 1600 px (logos 512 px), re-encoded to We
 (which also drops EXIF data such as GPS location), and rejected in the browser if still over 1 MB. The API's
 1 MB limit (`ilsoftware.storage.max-file-size`) remains the source of truth.
 
-**Errors**: API errors carry a stable `code`; `src/lib/api/errors.ts` has a friendly message per code
-(`ERROR_MESSAGES`) used when the server sends no detail, and forms show field errors next to the fields.
+**Errors**: API errors carry a stable `code`. In English the server's message is shown; in Somali the translation
+of the code (`errors.<CODE>` in the dictionaries). Forms show field errors next to the fields (the API sends those
+in English).
+
+**Languages** (`src/i18n/`): `en.ts` is the reference dictionary and `so.ts` must have the same keys (TypeScript
+and `i18n.test.ts` check keys and `{placeholders}`). Components use `const { t, tn } = useT()`:
+`t("explorer.addFlat")`, `t("apartments.formEdit", { number })`, `tn("count.apartments", 3)` for plurals; labels of
+statuses, types, roles and floors come from `useLabels()` (`src/lib/labels.ts`). Code outside React (formatters,
+error messages) uses `translate(getCurrentLang(), key)`. The choice is stored in the `propman_lang` cookie (shared
+by all subdomains in production) and read by the root layout, so the first render is already in the right language.
+Dates use a Somali dayjs locale; Ant Design's own texts (date pickers, pagination) stay English because antd has no
+Somali locale. The platform admin area is English only. Names your team types (properties, amenities, rooms) are
+shown as entered. **The Somali texts are a first draft: have a native speaker review `so.ts`.**
+
+**Currency**: the platform works in US dollars only. `formatMoney()` always formats USD, forms show a `$` prefix
+and send `currency: "USD"`, and the organization currency is fixed to USD.
 
 ## Layout
 
@@ -130,12 +147,13 @@ src/
     portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,
                             rooms editor, copy-rooms dialog, photo gallery, amenity editor, status modal
       explorer/             property explorer: building drawing, side panel, set-up checklist
+  i18n/                     en.ts / so.ts dictionaries, useT(), LanguageSwitcher
   lib/
     api/                    client, errors, typed endpoints, types
     auth/                   session storage, tenant and platform session contexts
     config.ts, host.ts, forms.ts, format.ts, reference-data.ts, theme.ts
     compressImage.ts        shared image compression for all uploads
-    labels.ts               labels and colors of types and statuses; Somali city suggestions
+    labels.ts               useLabels() (translated types/statuses/floors), status colors; Somali city suggestions
     portfolio-hooks.ts      enums, amenities and portfolio permissions
     url-state.ts            filters and paging in the query string
 ```
@@ -151,6 +169,5 @@ src/
 
 ## Not included yet
 
-Photo reordering is done with arrow buttons (no drag and drop yet). Somali translations (text is English and
-inline), an httpOnly-cookie session (tokens are in `localStorage`;
+Photo reordering is done with arrow buttons (no drag and drop yet). An httpOnly-cookie session (tokens are in `localStorage`;
 consider a backend-for-frontend before handling payments), and end-to-end browser tests.

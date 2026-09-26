@@ -9,11 +9,12 @@ import { Suspense, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { PropertyFormDrawer } from "@/components/portfolio/PropertyFormDrawer";
 import { PropertyStatusTag } from "@/components/portfolio/tags";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { PropertyListParams, PropertyStatus, PropertySummary, PropertyType } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { formatPercent } from "@/lib/format";
-import { PROPERTY_STATUS_LABELS, PROPERTY_TYPE_LABELS, SOMALI_CITIES } from "@/lib/labels";
+import { PROPERTY_STATUSES, PROPERTY_TYPES, SOMALI_CITIES, useLabels } from "@/lib/labels";
 import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { useUrlState } from "@/lib/url-state";
 
@@ -23,6 +24,8 @@ function PropertiesPage() {
   const { api } = useTenant();
   const router = useRouter();
   const url = useUrlState();
+  const { t, tn } = useT();
+  const labels = useLabels();
   const { canManage } = usePortfolioPermissions();
   const [addOpen, setAddOpen] = useState(url.get("add") === "1");
   const openedFromLink = url.get("add") === "1";
@@ -54,7 +57,7 @@ function PropertiesPage() {
   const [sortField, sortDir] = (params.sort ?? "").split(",");
   const columns: TableProps<PropertySummary>["columns"] = [
     {
-      title: "Property", key: "name", sorter: true, sortOrder: sortField === "name" ? (sortDir === "desc" ? "descend" : "ascend") : null,
+      title: t("properties.property"), key: "name", sorter: true, sortOrder: sortField === "name" ? (sortDir === "desc" ? "descend" : "ascend") : null,
       render: (_, p) => (
         <Flex vertical>
           <Link href={`/properties/${p.id}`}><Typography.Text strong>{p.name}</Typography.Text></Link>
@@ -62,52 +65,52 @@ function PropertiesPage() {
         </Flex>
       ),
     },
-    { title: "Type", dataIndex: "type", key: "type", render: (t: PropertyType) => PROPERTY_TYPE_LABELS[t] },
+    { title: t("common.type"), dataIndex: "type", key: "type", render: (type: PropertyType) => labels.propertyType(type) },
     {
-      title: "Location", key: "city", sorter: true, sortOrder: sortField === "city" ? (sortDir === "desc" ? "descend" : "ascend") : null,
+      title: t("properties.location"), key: "city", sorter: true, sortOrder: sortField === "city" ? (sortDir === "desc" ? "descend" : "ascend") : null,
       render: (_, p) => [p.district, p.city].filter(Boolean).join(", "),
     },
-    { title: "Apartments", key: "units", align: "right", render: (_, p) => p.unitStats.total },
-    { title: "Vacant", key: "vacant", align: "right", render: (_, p) => p.unitStats.vacant },
+    { title: t("properties.apartments"), key: "units", align: "right", render: (_, p) => p.unitStats.total },
+    { title: t("properties.available"), key: "vacant", align: "right", render: (_, p) => p.unitStats.vacant },
     {
-      title: "Occupancy", key: "occupancy", width: 160,
+      title: t("properties.occupancy"), key: "occupancy", width: 160,
       render: (_, p) => <Progress percent={Math.round(p.unitStats.occupancyRate * 100)} size="small" />,
     },
-    { title: "Status", dataIndex: "status", key: "status", render: (s: PropertyStatus) => <PropertyStatusTag status={s} /> },
+    { title: t("common.status"), dataIndex: "status", key: "status", render: (s: PropertyStatus) => <PropertyStatusTag status={s} /> },
   ];
 
   const content = properties.data?.content ?? [];
   const empty = (
     <Empty image={<HomeOutlined style={{ fontSize: 48, color: "#0f766e" }} />}
-      description={hasFilters ? "No properties match these filters" : "No properties yet"}>
+      description={hasFilters ? t("properties.noMatch") : t("properties.empty")}>
       {!hasFilters && canManage && (
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add your first property</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>{t("properties.addFirst")}</Button>
       )}
     </Empty>
   );
 
   return (
     <>
-      <PageHeader title="Properties" description="Your properties with their flats, apartments and rooms."
-        extra={canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add property</Button>} />
+      <PageHeader title={t("properties.title")} description={t("properties.subtitle")}
+        extra={canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>{t("properties.add")}</Button>} />
       <Card style={{ marginBottom: 16 }}>
         <Flex gap={12} wrap justify="space-between">
           <Space wrap>
-            <Input.Search key={params.search ?? ""} placeholder="Name, code, district…" allowClear style={{ width: 240 }}
+            <Input.Search key={params.search ?? ""} placeholder={t("properties.searchPlaceholder")} allowClear style={{ width: 240 }}
               defaultValue={params.search} onSearch={(search) => url.set({ search })} />
-            <Select allowClear placeholder="Type" style={{ width: 150 }} value={params.type}
+            <Select allowClear placeholder={t("common.type")} style={{ width: 150 }} value={params.type}
               onChange={(type) => url.set({ type })}
-              options={(Object.keys(PROPERTY_TYPE_LABELS) as PropertyType[]).map((t) => ({ value: t, label: PROPERTY_TYPE_LABELS[t] }))} />
-            <Select allowClear placeholder="Status" style={{ width: 150 }} value={params.status}
+              options={PROPERTY_TYPES.map((type) => ({ value: type, label: labels.propertyType(type) }))} />
+            <Select allowClear placeholder={t("common.status")} style={{ width: 150 }} value={params.status}
               onChange={(status) => url.set({ status })}
-              options={(Object.keys(PROPERTY_STATUS_LABELS) as PropertyStatus[]).map((s) => ({ value: s, label: PROPERTY_STATUS_LABELS[s] }))} />
-            <AutoComplete key={params.city ?? ""} allowClear placeholder="City" style={{ width: 160 }} defaultValue={params.city}
+              options={PROPERTY_STATUSES.map((s) => ({ value: s, label: labels.propertyStatus(s) }))} />
+            <AutoComplete key={params.city ?? ""} allowClear placeholder={t("common.city")} style={{ width: 160 }} defaultValue={params.city}
               options={SOMALI_CITIES.map((c) => ({ value: c }))} onSelect={(city?: string) => url.set({ city })}
               onChange={(v?: string) => { if (!v) url.set({ city: undefined }); }}
               onBlur={(e) => url.set({ city: (e.target as HTMLInputElement).value || undefined })} />
           </Space>
           <Segmented value={view} onChange={(v) => url.set({ view: v === "cards" ? "cards" : undefined, size: undefined })}
-            options={[{ value: "table", icon: <BarsOutlined />, label: "Table" }, { value: "cards", icon: <AppstoreOutlined />, label: "Cards" }]} />
+            options={[{ value: "table", icon: <BarsOutlined />, label: t("properties.table") }, { value: "cards", icon: <AppstoreOutlined />, label: t("properties.cards") }]} />
         </Flex>
       </Card>
       {view === "table" ? (
@@ -126,7 +129,7 @@ function PropertiesPage() {
             }}
             pagination={{
               current: params.page + 1, pageSize: params.size, total: properties.data?.totalElements ?? 0,
-              showSizeChanger: true, showTotal: (t) => `${t} propert${t === 1 ? "y" : "ies"}`,
+              showSizeChanger: true, showTotal: (total) => tn("count.properties", total),
             }} />
         </Card>
       ) : (
@@ -143,7 +146,7 @@ function PropertiesPage() {
                   <Flex justify="space-between" align="start" gap={8}>
                     <div>
                       <Typography.Text strong>{p.name}</Typography.Text>
-                      <div><Typography.Text type="secondary" style={{ fontSize: 13 }}>{p.city} · {p.unitStats.total} apartments</Typography.Text></div>
+                      <div><Typography.Text type="secondary" style={{ fontSize: 13 }}>{p.city} · {tn("count.apartments", p.unitStats.total)}</Typography.Text></div>
                     </div>
                     <PropertyStatusTag status={p.status} />
                   </Flex>

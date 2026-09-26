@@ -25,7 +25,7 @@ function PlatformLoginPage() {
   }, [ready, isAuthenticated, router]);
 
   return (
-    <AuthCard title="Platform administration" organizationName="IL Software"
+    <AuthCard language={false} title="Platform administration" organizationName="IL Software"
       subtitle="For IL Software staff only.">
       {expired && !login.error && (
         <Alert type="info" showIcon title="Your session has expired. Please sign in again." style={{ marginBottom: 16 }} />

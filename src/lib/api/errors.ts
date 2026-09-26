@@ -1,3 +1,5 @@
+import { getCurrentLang } from "@/i18n/core";
+import { translate } from "@/i18n/text";
 import type { FieldError, ProblemDetail } from "./types";
 
 /** An error answered by the API (Problem Details) or a network failure (status 0). */
@@ -35,37 +37,25 @@ export function toProblem(status: number, body: unknown): ProblemDetail {
   return { status, code: status >= 500 ? "INTERNAL_ERROR" : "UNKNOWN", detail: `Request failed (${status})` };
 }
 
-/** Friendly fallback text per API error code, used when the server sends no detail. */
-export const ERROR_MESSAGES: Record<string, string> = {
-  VALIDATION_ERROR: "Some fields are not valid. Check the form and try again.",
-  UNAUTHORIZED: "Please sign in again.",
-  FORBIDDEN: "You do not have permission to do this.",
-  NOT_FOUND: "This item no longer exists.",
-  RATE_LIMITED: "Too many attempts. Wait a minute and try again.",
-  FILE_TOO_LARGE: "The file is too large (maximum 1 MB).",
-  UNSUPPORTED_FILE_TYPE: "Use a PNG, JPEG or WebP image.",
-  INTERNAL_ERROR: "Something went wrong on our side. Please try again.",
-  NETWORK_ERROR: "Cannot reach the server. Check your connection and try again.",
-  BUILDING_NOT_IN_PROPERTY: "That flat belongs to another property.",
-  UNIT_NUMBER_TAKEN: "An apartment with this number already exists in this flat.",
-  FLOOR_OUT_OF_RANGE: "The floor is outside the flat's floors.",
-  INVALID_STATUS_TRANSITION: "The apartment cannot move to that status from its current status.",
-  PROPERTY_HAS_ACTIVE_UNITS: "The property has occupied or reserved apartments. Free them before archiving.",
-  BUILDING_HAS_ACTIVE_UNITS: "The flat has occupied or reserved apartments. Free them before archiving.",
-  UNIT_NOT_ARCHIVABLE: "Occupied or reserved apartments cannot be archived.",
-  BULK_LIMIT_EXCEEDED: "Too many apartments at once (maximum 500).",
-  AMENITY_IN_USE: "The amenity is used by properties, flats or apartments. Remove it from them first.",
-  AMENITY_SCOPE_MISMATCH: "That amenity cannot be used here.",
-  PHOTO_LIMIT_REACHED: "The photo limit has been reached. Delete a photo first.",
-};
-
-/** Human message for an error thrown by a request: the server's detail, else the text for its code. */
+/**
+ * Message for an error thrown by a request. In English the server's detail is shown (it is the most specific);
+ * in other languages the translated text for the error code, falling back to the detail.
+ */
 export function errorMessage(error: unknown): string {
+  const lang = getCurrentLang();
   if (error instanceof ApiError) {
-    return error.message && error.message !== "Request failed" ? error.message
-      : ERROR_MESSAGES[error.code] ?? "Something went wrong. Please try again.";
+    const byCode = translate(lang, `errors.${error.code}`);
+    const hasCode = byCode !== `errors.${error.code}`;
+    const detail = error.message && error.message !== "Request failed" ? error.message : undefined;
+    if (lang !== "en" && hasCode) {
+      return byCode;
+    }
+    return detail ?? (hasCode ? byCode : translate(lang, "errors.generic"));
   }
-  return "Something went wrong. Please try again.";
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return translate(lang, "errors.generic");
 }
 
 /** True when the error carries per-field validation messages (shown next to the form fields instead). */

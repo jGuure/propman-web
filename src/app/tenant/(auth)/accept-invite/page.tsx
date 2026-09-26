@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { useBranding } from "@/components/tenant/TenantGate";
+import { useT } from "@/i18n/provider";
 import { errorMessage, hasFieldErrors } from "@/lib/api/errors";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { applyFieldErrors, confirmPasswordRule, passwordRules } from "@/lib/forms";
@@ -21,6 +22,7 @@ interface AcceptForm {
 function AcceptInvitePage() {
   const { api, signIn } = useTenant();
   const { data: branding } = useBranding();
+  const { t } = useT();
   const router = useRouter();
   const token = useSearchParams().get("token") ?? "";
   const [form] = Form.useForm<AcceptForm>();
@@ -43,9 +45,9 @@ function AcceptInvitePage() {
   let content;
   if (!token || invite.error) {
     content = (
-      <Result status="warning" title="This invitation is not valid"
-        subTitle={invite.error ? errorMessage(invite.error) : "The invitation link is incomplete."}
-        extra="Ask the owner of the organization to send you a new invitation." />
+      <Result status="warning" title={t("auth.inviteInvalid")}
+        subTitle={invite.error ? errorMessage(invite.error) : t("auth.inviteIncomplete")}
+        extra={t("auth.inviteAskOwner")} />
     );
   } else if (!invite.data) {
     content = <Skeleton active />;
@@ -57,25 +59,25 @@ function AcceptInvitePage() {
         )}
         <Form<AcceptForm> form={form} layout="vertical" requiredMark={false} disabled={accept.isPending}
           initialValues={{ fullName: invite.data.fullName }} onFinish={(values) => accept.mutate(values)}>
-          <Form.Item label="Email">
+          <Form.Item label={t("common.email")}>
             <Input value={invite.data.email} disabled size="large" />
           </Form.Item>
-          <Form.Item name="fullName" label="Full name" rules={[{ required: true, message: "Enter your name" }]}>
+          <Form.Item name="fullName" label={t("common.fullName")} rules={[{ required: true, message: t("validation.enterName") }]}>
             <Input autoComplete="name" size="large" />
           </Form.Item>
-          <Form.Item name="phone" label="Phone (optional)">
+          <Form.Item name="phone" label={t("common.phoneOptional")}>
             <Input autoComplete="tel" size="large" />
           </Form.Item>
-          <Form.Item name="password" label="Password" rules={passwordRules}
-            extra="At least 8 characters with a letter and a digit.">
+          <Form.Item name="password" label={t("common.password")} rules={passwordRules(t)}
+            extra={t("validation.passwordHelp")}>
             <Input.Password autoComplete="new-password" size="large" />
           </Form.Item>
-          <Form.Item name="confirm" label="Confirm password" dependencies={["password"]}
-            rules={confirmPasswordRule("password")}>
+          <Form.Item name="confirm" label={t("common.confirmPassword")} dependencies={["password"]}
+            rules={confirmPasswordRule(t, "password")}>
             <Input.Password autoComplete="new-password" size="large" />
           </Form.Item>
           <Button type="primary" htmlType="submit" block size="large" loading={accept.isPending}>
-            Join {invite.data.organizationName}
+            {t("auth.join", { name: invite.data.organizationName })}
           </Button>
         </Form>
       </>
@@ -83,8 +85,8 @@ function AcceptInvitePage() {
   }
 
   return (
-    <AuthCard title="Accept invitation" organizationName={branding?.name} logoUrl={branding?.logoUrl}
-      subtitle="Set a password to activate your account." footer={<Link href="/login">Already active? Sign in</Link>}>
+    <AuthCard title={t("auth.inviteTitle")} organizationName={branding?.name} logoUrl={branding?.logoUrl}
+      subtitle={t("auth.inviteSubtitle")} footer={<Link href="/login">{t("auth.alreadyActive")}</Link>}>
       {content}
     </AuthCard>
   );

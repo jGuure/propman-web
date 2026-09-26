@@ -5,18 +5,22 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { App, Button, Card, Dropdown, Flex, Input, Result, Select, Table, Typography, type MenuProps, type TableProps } from "antd";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { ROLE_LABELS, RoleTag, USER_STATUS_LABELS, UserStatusTag } from "@/components/tags";
+import { RoleTag, UserStatusTag } from "@/components/tags";
 import { UserFormModal } from "@/components/tenant/UserFormModal";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { User, UserListParams, UserRole, UserStatus } from "@/lib/api/types";
 import { useCan, useMe, useTenant } from "@/lib/auth/tenant-context";
 import { formatDate, fromNow } from "@/lib/format";
+import { USER_ROLES, USER_STATUSES, useLabels } from "@/lib/labels";
 
 const SORT_FIELDS: Record<string, string> = { fullName: "fullName", role: "role", status: "status", lastLoginAt: "lastLoginAt", createdAt: "createdAt" };
 
 export default function UsersPage() {
   const { api } = useTenant();
   const { data: me } = useMe();
+  const { t, tn } = useT();
+  const labels = useLabels();
   const canRead = useCan("users:read");
   const canManage = useCan("users:manage");
   const { message, modal } = App.useApp();
@@ -42,33 +46,33 @@ export default function UsersPage() {
       return { user, kind };
     },
     onSuccess: ({ user, kind }) => {
-      message.success(kind === "resend" ? `New invitation sent to ${user.email}`
-        : kind === "disable" ? `${user.fullName} can no longer sign in` : `${user.fullName} was re-enabled`);
+      message.success(kind === "resend" ? t("users.resent", { email: user.email })
+        : t(kind === "disable" ? "users.disabledMsg" : "users.enabledMsg", { name: user.fullName }));
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => message.error(errorMessage(error)),
   });
 
   if (!canRead) {
-    return <Result status="403" title="No access" subTitle="Only owners and managers can see the team." />;
+    return <Result status="403" title={t("gate.noAccess")} subTitle={t("users.noAccessText")} />;
   }
 
   const update = (patch: Partial<UserListParams>) => setParams((p) => ({ ...p, page: 0, ...patch }));
 
   const menuFor = (user: User): MenuProps["items"] => {
-    const items: MenuProps["items"] = [{ key: "edit", label: "Edit", onClick: () => { setEditing(user); setFormOpen(true); } }];
+    const items: MenuProps["items"] = [{ key: "edit", label: t("common.edit"), onClick: () => { setEditing(user); setFormOpen(true); } }];
     if (user.status === "INVITED") {
-      items.push({ key: "resend", label: "Resend invitation", onClick: () => action.mutate({ user, kind: "resend" }) });
+      items.push({ key: "resend", label: t("users.resend"), onClick: () => action.mutate({ user, kind: "resend" }) });
     }
     if (user.id !== me?.user.id) {
       if (user.status === "DISABLED") {
-        items.push({ key: "enable", label: "Enable", onClick: () => action.mutate({ user, kind: "enable" }) });
+        items.push({ key: "enable", label: t("users.enable"), onClick: () => action.mutate({ user, kind: "enable" }) });
       } else {
         items.push({
-          key: "disable", label: "Disable", danger: true, onClick: () => modal.confirm({
-            title: `Disable ${user.fullName}?`,
-            content: "They will be signed out everywhere and cannot sign in until you enable them again.",
-            okText: "Disable", okButtonProps: { danger: true },
+          key: "disable", label: t("users.disable"), danger: true, onClick: () => modal.confirm({
+            title: t("users.disableTitle", { name: user.fullName }),
+            content: t("users.disableText"),
+            okText: t("users.disable"), okButtonProps: { danger: true },
             onOk: () => action.mutateAsync({ user, kind: "disable" }),
           }),
         });
@@ -79,23 +83,23 @@ export default function UsersPage() {
 
   const columns: TableProps<User>["columns"] = [
     {
-      title: "Name", dataIndex: "fullName", key: "fullName", sorter: true,
+      title: t("users.name"), dataIndex: "fullName", key: "fullName", sorter: true,
       render: (_, user) => (
         <Flex vertical>
-          <Typography.Text strong>{user.fullName}{user.id === me?.user.id && <Typography.Text type="secondary"> (you)</Typography.Text>}</Typography.Text>
+          <Typography.Text strong>{user.fullName}{user.id === me?.user.id && <Typography.Text type="secondary"> {t("users.you")}</Typography.Text>}</Typography.Text>
           <Typography.Text type="secondary" style={{ fontSize: 13 }}>{user.email}</Typography.Text>
         </Flex>
       ),
     },
-    { title: "Role", dataIndex: "role", key: "role", sorter: true, render: (role: UserRole) => <RoleTag role={role} /> },
-    { title: "Status", dataIndex: "status", key: "status", sorter: true, render: (status: UserStatus) => <UserStatusTag status={status} /> },
-    { title: "Last sign-in", dataIndex: "lastLoginAt", key: "lastLoginAt", sorter: true, responsive: ["md"], render: fromNow },
-    { title: "Added", dataIndex: "createdAt", key: "createdAt", sorter: true, defaultSortOrder: "descend", responsive: ["lg"], render: formatDate },
+    { title: t("users.role"), dataIndex: "role", key: "role", sorter: true, render: (role: UserRole) => <RoleTag role={role} /> },
+    { title: t("common.status"), dataIndex: "status", key: "status", sorter: true, render: (status: UserStatus) => <UserStatusTag status={status} /> },
+    { title: t("users.lastSignIn"), dataIndex: "lastLoginAt", key: "lastLoginAt", sorter: true, responsive: ["md"], render: (at: string | null) => fromNow(at) },
+    { title: t("common.added"), dataIndex: "createdAt", key: "createdAt", sorter: true, defaultSortOrder: "descend", responsive: ["lg"], render: formatDate },
     ...(canManage ? [{
       key: "actions", width: 56, align: "right" as const,
       render: (_: unknown, user: User) => (
         <Dropdown menu={{ items: menuFor(user) }} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} aria-label={`Actions for ${user.fullName}`} />
+          <Button type="text" icon={<MoreOutlined />} aria-label={t("users.actionsFor", { name: user.fullName })} />
         </Dropdown>
       ),
     }] : []),
@@ -114,27 +118,27 @@ export default function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Users" description="People who can sign in to your organization."
+      <PageHeader title={t("users.title")} description={t("users.subtitle")}
         extra={canManage && (
           <Button type="primary" icon={<UserAddOutlined />} onClick={() => { setEditing(undefined); setFormOpen(true); }}>
-            Invite user
+            {t("users.invite")}
           </Button>
         )} />
       <Card>
         <Flex gap={12} wrap style={{ marginBottom: 16 }}>
-          <Input.Search placeholder="Search name or email" allowClear style={{ maxWidth: 280 }}
+          <Input.Search placeholder={t("users.searchPlaceholder")} allowClear style={{ maxWidth: 280 }}
             onSearch={(search) => update({ search: search || undefined })} />
-          <Select placeholder="All roles" allowClear style={{ width: 160 }} onChange={(role?: UserRole) => update({ role })}
-            options={(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => ({ value: r, label: ROLE_LABELS[r] }))} />
-          <Select placeholder="All statuses" allowClear style={{ width: 160 }} onChange={(status?: UserStatus) => update({ status })}
-            options={(Object.keys(USER_STATUS_LABELS) as UserStatus[]).map((s) => ({ value: s, label: USER_STATUS_LABELS[s] }))} />
+          <Select placeholder={t("users.allRoles")} allowClear style={{ width: 160 }} onChange={(role?: UserRole) => update({ role })}
+            options={USER_ROLES.map((r) => ({ value: r, label: labels.role(r) }))} />
+          <Select placeholder={t("users.allStatuses")} allowClear style={{ width: 160 }} onChange={(status?: UserStatus) => update({ status })}
+            options={USER_STATUSES.map((s) => ({ value: s, label: labels.userStatus(s) }))} />
         </Flex>
         <Table<User> rowKey="id" columns={columns} dataSource={users.data?.content} loading={users.isFetching}
           onChange={onTableChange} scroll={{ x: 600 }}
-          locale={{ emptyText: users.error ? errorMessage(users.error) : "No users match these filters" }}
+          locale={{ emptyText: users.error ? errorMessage(users.error) : t("users.noMatch") }}
           pagination={{
             current: params.page + 1, pageSize: params.size, total: users.data?.totalElements ?? 0,
-            showSizeChanger: true, showTotal: (total) => `${total} user${total === 1 ? "" : "s"}`,
+            showSizeChanger: true, showTotal: (total) => tn("count.users", total),
           }} />
       </Card>
       <UserFormModal open={formOpen} user={editing} onClose={() => setFormOpen(false)} />

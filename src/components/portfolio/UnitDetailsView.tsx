@@ -5,11 +5,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Card, Descriptions, Flex, Skeleton, Space, Tabs, Timeline, Typography } from "antd";
 import Link from "next/link";
 import { useState } from "react";
+import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { StatusChange } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { formatDateTime, formatMoney, fromNow } from "@/lib/format";
-import { floorLabel, UNIT_STATUS_BAR, UNIT_STATUS_LABELS, UNIT_TYPE_LABELS } from "@/lib/labels";
+import { UNIT_STATUS_BAR, useLabels } from "@/lib/labels";
 import { useAllowedTransitions, usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { AmenityEditor } from "./AmenityEditor";
 import { ChangeStatusModal } from "./ChangeStatusModal";
@@ -22,6 +23,8 @@ import { UnitFormDrawer } from "./UnitFormDrawer";
 /** Everything about one unit; shown in the unit drawer and on the unit page. */
 export function UnitDetailsView({ unitId, compact = false }: { unitId: string; compact?: boolean }) {
   const { api } = useTenant();
+  const { t } = useT();
+  const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const { canManage } = usePortfolioPermissions();
@@ -38,12 +41,12 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   const refresh = () => invalidatePortfolio(queryClient);
   const amenities = useMutation({
     mutationFn: (ids: string[]) => api.setUnitAmenities(unitId, ids),
-    onSuccess: () => { message.success("Amenities saved"); refresh(); },
+    onSuccess: () => { message.success(t("explorer.amenitiesSaved")); refresh(); },
     onError: (error) => message.error(errorMessage(error)),
   });
   const archive = useMutation({
     mutationFn: () => (unit.data?.archivedAt ? api.restoreUnit(unitId) : api.archiveUnit(unitId)),
-    onSuccess: (u) => { message.success(u.archivedAt ? "Apartment archived" : "Apartment restored"); refresh(); },
+    onSuccess: (u) => { message.success(t(u.archivedAt ? "explorer.apartmentArchived" : "explorer.apartmentRestored")); refresh(); },
     onError: (error) => message.error(errorMessage(error)),
   });
 
@@ -60,17 +63,17 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
 
   const details = (
     <Descriptions column={compact ? 1 : { xs: 1, md: 2 }} size="small" bordered>
-      <Descriptions.Item label="Property"><Link href={`/properties/${u.propertyId}`}>{u.propertyName}</Link></Descriptions.Item>
-      <Descriptions.Item label="Flat">{u.buildingName ?? "—"}</Descriptions.Item>
-      <Descriptions.Item label="Floor">{floorLabel(u.floor)}</Descriptions.Item>
-      <Descriptions.Item label="Type">{UNIT_TYPE_LABELS[u.type]}</Descriptions.Item>
-      <Descriptions.Item label="Bedrooms / bathrooms">{u.bedrooms} / {u.bathrooms}</Descriptions.Item>
-      <Descriptions.Item label="Size">{u.sizeSqm ? `${u.sizeSqm} m²` : "—"}</Descriptions.Item>
-      <Descriptions.Item label="Furnished">{u.furnished ? "Yes" : "No"}</Descriptions.Item>
-      <Descriptions.Item label="Monthly rent"><Typography.Text strong>{formatMoney(u.baseRent, u.currency)}</Typography.Text></Descriptions.Item>
-      <Descriptions.Item label="Deposit">{formatMoney(u.depositAmount, u.currency)}</Descriptions.Item>
-      <Descriptions.Item label="Added">{formatDateTime(u.createdAt)}</Descriptions.Item>
-      {u.notes && <Descriptions.Item label="Notes" span="filled">{u.notes}</Descriptions.Item>}
+      <Descriptions.Item label={t("apartments.property")}><Link href={`/properties/${u.propertyId}`}>{u.propertyName}</Link></Descriptions.Item>
+      <Descriptions.Item label={t("apartments.flat")}>{u.buildingName ?? "—"}</Descriptions.Item>
+      <Descriptions.Item label={t("apartments.floor")}>{labels.floor(u.floor)}</Descriptions.Item>
+      <Descriptions.Item label={t("common.type")}>{labels.unitType(u.type)}</Descriptions.Item>
+      <Descriptions.Item label={t("apartments.bedsBaths")}>{u.bedrooms} / {u.bathrooms}</Descriptions.Item>
+      <Descriptions.Item label={t("common.size")}>{u.sizeSqm ? `${u.sizeSqm} m²` : "—"}</Descriptions.Item>
+      <Descriptions.Item label={t("apartments.furnished")}>{u.furnished ? t("common.yes") : t("common.no")}</Descriptions.Item>
+      <Descriptions.Item label={t("common.monthlyRent")}><Typography.Text strong>{formatMoney(u.baseRent)}</Typography.Text></Descriptions.Item>
+      <Descriptions.Item label={t("common.deposit")}>{formatMoney(u.depositAmount)}</Descriptions.Item>
+      <Descriptions.Item label={t("common.added")}>{formatDateTime(u.createdAt)}</Descriptions.Item>
+      {u.notes && <Descriptions.Item label={t("common.notes")} span="filled">{u.notes}</Descriptions.Item>}
     </Descriptions>
   );
   const timeline = (
@@ -79,11 +82,11 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
       content: (
         <div>
           <Typography.Text strong>
-            {c.fromStatus ? `${UNIT_STATUS_LABELS[c.fromStatus]} → ${UNIT_STATUS_LABELS[c.toStatus]}` : `Created as ${UNIT_STATUS_LABELS[c.toStatus].toLowerCase()}`}
+            {c.fromStatus ? `${labels.unitStatus(c.fromStatus)} → ${labels.unitStatus(c.toStatus)}` : t("apartments.createdAs", { status: labels.unitStatus(c.toStatus).toLowerCase() })}
           </Typography.Text>
           {c.reason && <div><Typography.Text type="secondary">{c.reason}</Typography.Text></div>}
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {fromNow(c.changedAt)} · {c.changedByName ?? (c.source === "MANUAL" ? "Unknown user" : "System")}
+            {fromNow(c.changedAt)} · {c.changedByName ?? (c.source === "MANUAL" ? t("apartments.unknownUser") : t("apartments.system"))}
           </Typography.Text>
         </div>
       ),
@@ -94,59 +97,59 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
     <div>
       <Flex justify="space-between" align="center" wrap gap={12} style={{ marginBottom: 16 }}>
         <Space size="middle" align="center">
-          <Typography.Title level={compact ? 4 : 3} style={{ margin: 0 }}>Apartment {u.unitNumber}</Typography.Title>
-          {archived ? <Typography.Text type="secondary">Archived</Typography.Text> : <UnitStatusTag status={u.status} />}
+          <Typography.Title level={compact ? 4 : 3} style={{ margin: 0 }}>{t("explorer.apartment", { number: u.unitNumber })}</Typography.Title>
+          {archived ? <Typography.Text type="secondary">{t("common.archived")}</Typography.Text> : <UnitStatusTag status={u.status} />}
         </Space>
         <Space wrap>
           {!archived && transitions.length > 0 && (
-            <Button icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>Change status</Button>
+            <Button icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>
           )}
-          {!archived && canManage && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>Edit</Button>}
+          {!archived && canManage && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
           {canManage && (archived ? (
-            <Button icon={<UndoOutlined />} loading={archive.isPending} onClick={() => archive.mutate()}>Restore</Button>
+            <Button icon={<UndoOutlined />} loading={archive.isPending} onClick={() => archive.mutate()}>{t("common.restore")}</Button>
           ) : (
-            <Button icon={<InboxOutlined />} danger disabled={taken} title={taken ? "Occupied or reserved apartments cannot be archived" : undefined}
+            <Button icon={<InboxOutlined />} danger disabled={taken} title={taken ? t("explorer.cannotArchiveTaken") : undefined}
               onClick={() => modal.confirm({
-                title: `Archive apartment ${u.unitNumber}?`, okText: "Archive", okButtonProps: { danger: true },
-                content: "It will be hidden from lists and the floor plan. You can restore it later.",
+                title: t("explorer.archiveApartmentTitle", { number: u.unitNumber }), okText: t("common.archive"), okButtonProps: { danger: true },
+                content: t("explorer.archiveApartmentText"),
                 onOk: () => archive.mutateAsync(),
-              })}>Archive</Button>
+              })}>{t("common.archive")}</Button>
           ))}
         </Space>
       </Flex>
       {compact ? (
         <Tabs items={[
-          { key: "details", label: "Details", children: details },
+          { key: "details", label: t("apartments.details"), children: details },
           {
-            key: "rooms", label: `Rooms (${u.rooms.length})`, children: <RoomsEditor unitId={u.id} canEdit={canManage && !archived} />,
+            key: "rooms", label: `${t("apartments.rooms")} (${u.rooms.length})`, children: <RoomsEditor unitId={u.id} canEdit={canManage && !archived} />,
           },
           {
-            key: "amenities", label: "Amenities", children: (
+            key: "amenities", label: t("apartments.amenities"), children: (
               <AmenityEditor scope="UNIT" value={u.amenities} canEdit={canManage && !archived}
                 saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
             ),
           },
           {
-            key: "photos", label: `Photos (${u.photos.length})`, children: (
+            key: "photos", label: t("apartments.photos", { count: u.photos.length }), children: (
               <PhotoGallery owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={canManage && !archived}
                 onChanged={refresh} />
             ),
           },
-          { key: "history", label: "Status history", children: timeline },
+          { key: "history", label: t("apartments.statusHistory"), children: timeline },
         ]} />
       ) : (
         <Flex vertical gap={16}>
-          <Card title="Details">{details}</Card>
-          <Card title="Rooms"><RoomsEditor unitId={u.id} canEdit={canManage && !archived} /></Card>
-          <Card title="Amenities">
+          <Card title={t("apartments.details")}>{details}</Card>
+          <Card title={t("apartments.rooms")}><RoomsEditor unitId={u.id} canEdit={canManage && !archived} /></Card>
+          <Card title={t("apartments.amenities")}>
             <AmenityEditor scope="UNIT" value={u.amenities} canEdit={canManage && !archived}
               saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
           </Card>
-          <Card title="Photos">
+          <Card title={t("apartments.photos", { count: u.photos.length })}>
             <PhotoGallery owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={canManage && !archived}
               onChanged={refresh} />
           </Card>
-          <Card title="Status history">{timeline}</Card>
+          <Card title={t("apartments.statusHistory")}>{timeline}</Card>
         </Flex>
       )}
       <UnitFormDrawer open={editOpen} unit={u} onClose={() => setEditOpen(false)} />

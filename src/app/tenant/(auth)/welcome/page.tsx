@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
+import { useT } from "@/i18n/provider";
 import { useTenant } from "@/lib/auth/tenant-context";
 
 /**
@@ -14,6 +15,7 @@ import { useTenant } from "@/lib/auth/tenant-context";
  */
 export default function WelcomePage() {
   const { api, signIn } = useTenant();
+  const { t } = useT();
   const router = useRouter();
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
@@ -42,9 +44,9 @@ export default function WelcomePage() {
   }
   return (
     <Flex align="center" justify="center" style={{ minHeight: "100vh" }}>
-      <Result status="success" title="Your organization is ready"
-        subTitle="Sign in with the email and password you just registered."
-        extra={<Link href="/login"><Button type="primary">Sign in</Button></Link>} />
+      <Result status="success" title={t("auth.readyTitle")}
+        subTitle={t("auth.readyText")}
+        extra={<Link href="/login"><Button type="primary">{t("auth.signIn")}</Button></Link>} />
     </Flex>
   );
 }

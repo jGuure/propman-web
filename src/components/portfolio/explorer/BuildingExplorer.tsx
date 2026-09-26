@@ -5,7 +5,8 @@ import { Empty, Flex, Input, Tooltip, Typography } from "antd";
 import { useMemo, useState } from "react";
 import type { PropertyStructure, StructureApartment, StructureFloor, UnitStatus } from "@/lib/api/types";
 import { formatMoney } from "@/lib/format";
-import { floorLabel, UNIT_STATUS_BAR, UNIT_STATUS_COLORS, UNIT_STATUS_LABELS, UNIT_TYPE_LABELS } from "@/lib/labels";
+import { useT } from "@/i18n/provider";
+import { UNIT_STATUS_BAR, UNIT_STATUS_COLORS, useLabels } from "@/lib/labels";
 import { brand } from "@/lib/theme";
 
 interface Props {
@@ -20,6 +21,8 @@ const STATUSES: UnitStatus[] = ["VACANT", "RESERVED", "OCCUPIED", "MAINTENANCE",
 
 /** The flats drawn as buildings: floors stacked from the top floor down, apartments as colored boxes. */
 export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentId, onSelectFlat, onSelectApartment }: Props) {
+  const { t, tn } = useT();
+  const labels = useLabels();
   const [highlight, setHighlight] = useState<UnitStatus | undefined>();
   const [search, setSearch] = useState("");
   const term = search.trim().toLowerCase();
@@ -35,7 +38,7 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
     (highlight !== undefined && a.status !== highlight) || (term !== "" && !a.unitNumber.toLowerCase().includes(term));
 
   if (structure.flats.length === 0 && structure.unassigned.length === 0) {
-    return <Empty description="No flats or apartments yet" style={{ padding: "40px 0" }} />;
+    return <Empty description={t("explorer.empty")} style={{ padding: "40px 0" }} />;
   }
 
   return (
@@ -46,19 +49,19 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
             const active = highlight === status;
             return (
               <button key={status} type="button" onClick={() => setHighlight(active ? undefined : status)}
-                title={active ? "Show all" : `Highlight ${UNIT_STATUS_LABELS[status].toLowerCase()} apartments`}
+                title={active ? t("explorer.showAll") : t("explorer.highlight", { status: labels.unitStatus(status).toLowerCase() })}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999, cursor: "pointer",
                   fontSize: 13, border: `1px solid ${active ? UNIT_STATUS_BAR[status] : "#e5e7eb"}`,
                   background: active ? UNIT_STATUS_COLORS[status].fill : "#fff", fontWeight: active ? 600 : 400,
                 }}>
                 <span style={{ width: 9, height: 9, borderRadius: 2, background: UNIT_STATUS_BAR[status] }} />
-                {UNIT_STATUS_LABELS[status]} <span style={{ color: "#6b7280" }}>{counts[status]}</span>
+                {labels.unitStatus(status)} <span style={{ color: "#6b7280" }}>{counts[status]}</span>
               </button>
             );
           })}
         </Flex>
-        <Input allowClear size="small" prefix={<SearchOutlined />} placeholder="Find apartment" style={{ width: 170 }}
+        <Input allowClear size="small" prefix={<SearchOutlined />} placeholder={t("explorer.findApartment")} style={{ width: 170 }}
           value={search} onChange={(e) => setSearch(e.target.value)} />
       </Flex>
 
@@ -72,7 +75,7 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
             }
             const selected = selectedFlatId === flat.id;
             return (
-              <Flat key={flat.id} title={flat.name} subtitle={`${flat.unitStats.total} apartments · ${Math.round(flat.unitStats.occupancyRate * 100)}% occupied`}
+              <Flat key={flat.id} title={flat.name} subtitle={t("explorer.flatSubtitle", { apartments: tn("count.apartments", flat.unitStats.total), percent: Math.round(flat.unitStats.occupancyRate * 100) })}
                 lift={flat.hasLift} selected={selected} onSelect={() => onSelectFlat(flat.id)}>
                 {floors.map((f) => (
                   <FloorRow key={f.floor} floor={f.floor}>
@@ -86,7 +89,7 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
             );
           })}
           {structure.unassigned.length > 0 && (
-            <Flat title={structure.flats.length ? "Other apartments" : structure.name} subtitle="not in a flat" lift={false}>
+            <Flat title={structure.flats.length ? t("explorer.otherApartments") : structure.name} subtitle={t("explorer.notInFlat")} lift={false}>
               {structure.unassigned.map((f) => (
                 <FloorRow key={f.floor} floor={f.floor}>
                   {f.apartments.map((a) => (
@@ -106,6 +109,7 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
 function Flat({ title, subtitle, lift, selected, onSelect, children }: {
   title: string; subtitle: string; lift: boolean; selected?: boolean; onSelect?: () => void; children: React.ReactNode;
 }) {
+  const { t } = useT();
   return (
     <div style={{ flexShrink: 0 }}>
       <button type="button" onClick={onSelect} disabled={!onSelect}
@@ -117,7 +121,7 @@ function Flat({ title, subtitle, lift, selected, onSelect, children }: {
         <Flex align="center" gap={8}>
           <BankOutlined />
           <span style={{ fontWeight: 600 }}>{title}</span>
-          {lift && <Tooltip title="Has a lift"><VerticalAlignTopOutlined style={{ opacity: 0.8 }} /></Tooltip>}
+          {lift && <Tooltip title={t("explorer.hasLift")}><VerticalAlignTopOutlined style={{ opacity: 0.8 }} /></Tooltip>}
         </Flex>
         <div style={{ fontSize: 12, opacity: 0.8 }}>{subtitle}</div>
       </button>
@@ -133,12 +137,13 @@ function Flat({ title, subtitle, lift, selected, onSelect, children }: {
 }
 
 function FloorRow({ floor, children }: { floor: number; children: React.ReactNode }) {
+  const labels = useLabels();
   return (
     <Flex align="center" gap={8} style={{
       padding: "4px 0", borderBottom: "1px dashed #eceff0", minHeight: 50,
       background: floor < 0 ? "repeating-linear-gradient(135deg,#fafafa,#fafafa 6px,#f3f4f6 6px,#f3f4f6 12px)" : undefined,
     }}>
-      <Typography.Text type="secondary" style={{ width: 54, fontSize: 11, flexShrink: 0 }}>{floorLabel(floor)}</Typography.Text>
+      <Typography.Text type="secondary" style={{ width: 54, fontSize: 11, flexShrink: 0 }}>{labels.floor(floor)}</Typography.Text>
       <Flex gap={6} wrap={false}>{children}</Flex>
     </Flex>
   );
@@ -147,14 +152,16 @@ function FloorRow({ floor, children }: { floor: number; children: React.ReactNod
 function ApartmentBox({ apartment: a, selected, dimmed, onClick }: {
   apartment: StructureApartment; selected: boolean; dimmed: boolean; onClick: () => void;
 }) {
+  const { t, tn } = useT();
+  const labels = useLabels();
   const colors = UNIT_STATUS_COLORS[a.status];
   return (
     <Tooltip title={<>
-      <div><b>{a.unitNumber}</b> · {UNIT_STATUS_LABELS[a.status]}</div>
-      <div>{UNIT_TYPE_LABELS[a.type]} · {formatMoney(a.baseRent, a.currency)}</div>
-      <div>{a.rooms.length ? `${a.rooms.length} rooms` : "No rooms described yet"}</div>
+      <div><b>{a.unitNumber}</b> · {labels.unitStatus(a.status)}</div>
+      <div>{labels.unitType(a.type)} · {formatMoney(a.baseRent)}</div>
+      <div>{a.rooms.length ? tn("count.rooms", a.rooms.length) : t("explorer.noRoomsYet")}</div>
     </>}>
-      <button type="button" onClick={onClick} aria-pressed={selected} aria-label={`Apartment ${a.unitNumber}, ${UNIT_STATUS_LABELS[a.status]}`}
+      <button type="button" onClick={onClick} aria-pressed={selected} aria-label={`${t("explorer.apartment", { number: a.unitNumber })}, ${labels.unitStatus(a.status)}`}
         style={{
           position: "relative", width: 58, height: 40, borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600,
           background: colors.fill, color: colors.text, border: `1.5px solid ${selected ? brand.primary : colors.border}`,
@@ -163,7 +170,7 @@ function ApartmentBox({ apartment: a, selected, dimmed, onClick }: {
         }}>
         {a.unitNumber}
         {a.rooms.length === 0 && (
-          <span title="No rooms yet" style={{ position: "absolute", top: 3, right: 3, width: 6, height: 6, borderRadius: 3, background: "#f59e0b" }} />
+          <span title={t("rooms.none")} style={{ position: "absolute", top: 3, right: 3, width: 6, height: 6, borderRadius: 3, background: "#f59e0b" }} />
         )}
       </button>
     </Tooltip>
