@@ -1,12 +1,13 @@
 "use client";
 
-import { AppstoreAddOutlined, CopyOutlined, EditOutlined, EnvironmentOutlined, ExportOutlined, InboxOutlined, PlusOutlined, SwapOutlined, UndoOutlined } from "@ant-design/icons";
+import { AppstoreAddOutlined, CameraOutlined, CopyOutlined, EditOutlined, EnvironmentOutlined, ExportOutlined, InboxOutlined, MoreOutlined, PlusOutlined, SwapOutlined, UndoOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Descriptions, Divider, Flex, Progress, Skeleton, Space, Tag, Typography } from "antd";
+import { Alert, App, Button, Divider, Dropdown, Flex, Image, Modal, Progress, Skeleton, Space, Tag, Tooltip, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/errors";
-import type { Amenity, Building, PropertyDetails, PropertyStructure } from "@/lib/api/types";
+import type { PhotoOwner } from "@/lib/api/tenant-api";
+import type { Amenity, Building, Photo, PropertyDetails, PropertyStructure } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
@@ -64,39 +65,43 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
   const mapUrl = p.latitude != null && p.longitude != null
     ? `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}` : null;
   const flats = p.buildings.filter((b) => b.status === "ACTIVE");
+  const facts = [p.address, p.yearBuilt ? t("explorer.builtIn", { year: p.yearBuilt }) : null].filter(Boolean).join(" · ");
 
   return (
     <>
-      <Typography.Text type="secondary" style={{ display: "block", marginBottom: 16 }}>
+      <Typography.Text type="secondary" style={{ display: "block", marginBottom: 16, fontSize: 13 }}>
         {t("explorer.selectHint")}
       </Typography.Text>
-      <Block title={t("explorer.sharedByEveryone")}>
-        <AmenityEditor scope="PROPERTY" value={p.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
-      </Block>
+      {(facts || mapUrl || p.description) && (
+        <Block title={t("explorer.about")}>
+          {(facts || mapUrl) && (
+            <Typography.Text style={{ display: "block" }}>
+              {facts}{facts && mapUrl && " · "}
+              {mapUrl && <a href={mapUrl} target="_blank" rel="noreferrer"><EnvironmentOutlined /> {t("explorer.map")}</a>}
+            </Typography.Text>
+          )}
+          {p.description && <ShortText text={p.description} />}
+        </Block>
+      )}
       {flats.length > 0 && (
         <Block title={t("explorer.flats")}>
-          <Flex vertical gap={6}>
+          <Flex vertical>
             {flats.map((b) => (
               <button key={b.id} type="button" onClick={() => onSelectFlat(b.id)}
-                style={{ textAlign: "left", padding: "8px 10px", border: "1px solid #eef0f0", borderRadius: 8, background: "#fff", cursor: "pointer" }}>
-                <Flex justify="space-between"><Typography.Text strong>{b.name}</Typography.Text><Typography.Text type="secondary">{tn("count.apartments", b.unitStats.total)}</Typography.Text></Flex>
-                <Progress percent={Math.round(b.unitStats.occupancyRate * 100)} size="small" style={{ margin: 0 }} />
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", border: "none", borderBottom: "1px solid #f0f2f2", background: "none", cursor: "pointer", textAlign: "left" }}>
+                <Typography.Text strong style={{ flex: 1 }}>{b.name}</Typography.Text>
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>{tn("count.apartments", b.unitStats.total)}</Typography.Text>
+                <Progress type="circle" size={22} percent={Math.round(b.unitStats.occupancyRate * 100)} showInfo={false} />
+                <Typography.Text style={{ width: 36, textAlign: "right", fontSize: 13 }}>{formatPercent(b.unitStats.occupancyRate)}</Typography.Text>
               </button>
             ))}
           </Flex>
         </Block>
       )}
-      <Block title={t("explorer.about")}>
-        <Descriptions column={1} size="small">
-          <Descriptions.Item label={t("common.address")}>{p.address ?? "—"}</Descriptions.Item>
-          <Descriptions.Item label={t("properties.yearBuilt")}>{p.yearBuilt ?? "—"}</Descriptions.Item>
-          {mapUrl && <Descriptions.Item label={t("explorer.map")}><a href={mapUrl} target="_blank" rel="noreferrer"><EnvironmentOutlined /> {t("explorer.googleMaps")}</a></Descriptions.Item>}
-        </Descriptions>
-        {p.description && <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>{p.description}</Typography.Paragraph>}
+      <Block title={t("explorer.sharedByEveryone")}>
+        <AmenityEditor scope="PROPERTY" value={p.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
       </Block>
-      <Block title={t("explorer.photos", { count: p.photos.length, max: 15 })}>
-        <PhotoGallery owner="properties" ownerId={p.id} photos={p.photos} max={15} canEdit={editable} onChanged={() => invalidatePortfolio(queryClient)} />
-      </Block>
+      <PhotoStrip owner="properties" ownerId={p.id} photos={p.photos} max={15} canEdit={editable} title={p.name} />
     </>
   );
 }
@@ -170,12 +175,13 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   unitId: string; property: PropertyDetails; structure: PropertyStructure; flatAmenities: { name: string; amenities: Amenity[] } | null; editable: boolean;
 }) {
   const { api } = useTenant();
-  const { t } = useT();
+  const { t, tn } = useT();
   const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [roomsOpen, setRoomsOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
   const transitions = useAllowedTransitions(unit.data?.status);
@@ -200,6 +206,21 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   const source = [...structure.flats.flatMap((f) => f.floors), ...structure.unassigned].flatMap((f) => f.apartments)
     .find((a) => a.id === u.id);
   const taken = u.status === "OCCUPIED" || u.status === "RESERVED";
+  const roomsSize = u.rooms.reduce((sum, r) => sum + (r.sizeSqm ?? 0), 0);
+  const inherited = [...(flatAmenities?.amenities ?? []), ...property.amenities];
+  const moreItems: MenuProps["items"] = editable ? [
+    ...(u.rooms.length > 0 && source ? [{ key: "copy", icon: <CopyOutlined />, label: t("explorer.copyRooms"), onClick: () => setCopyOpen(true) }] : []),
+    u.archivedAt
+      ? { key: "restore", icon: <UndoOutlined />, label: t("explorer.restoreApartment"), onClick: () => archive.mutate() }
+      : {
+        key: "archive", icon: <InboxOutlined />, danger: true, disabled: taken, label: t("explorer.archiveApartment"),
+        title: taken ? t("explorer.cannotArchiveTaken") : undefined,
+        onClick: () => modal.confirm({
+          title: t("explorer.archiveApartmentTitle", { number: u.unitNumber }), okText: t("common.archive"), okButtonProps: { danger: true },
+          content: t("explorer.archiveApartmentText"), onOk: () => archive.mutateAsync(),
+        }),
+      },
+  ] : [];
 
   return (
     <>
@@ -215,9 +236,14 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
         </div>
         <Link href={`/units/${u.id}`}><Button type="text" icon={<ExportOutlined />} aria-label={t("explorer.openPage")} /></Link>
       </Flex>
-      <Flex gap={8} wrap style={{ marginBottom: 16 }}>
+      <Flex gap={8} style={{ marginBottom: 16 }}>
         {transitions.length > 0 && <Button type="primary" icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>}
         {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
+        {moreItems.length > 0 && (
+          <Dropdown menu={{ items: moreItems }} trigger={["click"]}>
+            <Button icon={<MoreOutlined />} aria-label={t("explorer.moreActions")} />
+          </Dropdown>
+        )}
       </Flex>
       <Flex gap={8} style={{ marginBottom: 20 }}>
         {[
@@ -231,33 +257,110 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
           </div>
         ))}
       </Flex>
-      <Block title={t("explorer.rooms")}>
-        <RoomsEditor unitId={u.id} canEdit={editable} compact extra={source && source.rooms.length > 0 && (
-          <Button icon={<CopyOutlined />} onClick={() => setCopyOpen(true)}>{t("explorer.copyTo")}</Button>
-        )} />
+      <Block title={`${tn("count.rooms", u.rooms.length)}${roomsSize > 0 ? ` · ${roomsSize} m²` : ""}`}
+        extra={(editable || u.rooms.length > 0) && (
+          <Button type="link" size="small" style={{ padding: 0 }} onClick={() => setRoomsOpen(true)}>
+            {editable ? t("explorer.manage") : t("explorer.viewAll")}
+          </Button>
+        )}>
+        {u.rooms.length === 0 ? (
+          editable
+            ? <Button block type="dashed" icon={<PlusOutlined />} onClick={() => setRoomsOpen(true)}>{t("rooms.add")}</Button>
+            : <Typography.Text type="secondary">{t("rooms.none")}</Typography.Text>
+        ) : (
+          <Flex wrap gap={6}>
+            {u.rooms.map((r) => (
+              <Tooltip key={r.id} title={r.notes || undefined}>
+                <Tag style={{ marginInlineEnd: 0, padding: "2px 8px", background: "#f6f8f8", borderColor: "#eef0f0" }}>
+                  {r.name}{r.sizeSqm ? <Typography.Text type="secondary" style={{ fontSize: 12 }}> · {r.sizeSqm} m²</Typography.Text> : null}
+                </Tag>
+              </Tooltip>
+            ))}
+          </Flex>
+        )}
       </Block>
       <Block title={t("apartments.amenities")}>
         <AmenityEditor scope="UNIT" value={u.amenities} canEdit={editable} saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />
-        {flatAmenities && <Inherited label={t("explorer.fromFlat", { name: flatAmenities.name })} amenities={flatAmenities.amenities} />}
-        <Inherited label={t("explorer.fromProperty")} amenities={property.amenities} />
+        {inherited.length > 0 && (
+          <Tooltip title={inherited.map((a) => a.name).join(", ")}>
+            <Typography.Text type="secondary" style={{ display: "inline-block", marginTop: 8, fontSize: 12, cursor: "help" }}>
+              {t("explorer.sharedCount", { count: inherited.length })}
+            </Typography.Text>
+          </Tooltip>
+        )}
       </Block>
-      <Block title={t("explorer.photos", { count: u.photos.length, max: 10 })}>
-        <PhotoGallery owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={editable} onChanged={() => invalidatePortfolio(queryClient)} />
-      </Block>
-      {u.notes && <Block title={t("common.notes")}><Typography.Paragraph>{u.notes}</Typography.Paragraph></Block>}
-      {editable && (
-        <Button danger={!u.archivedAt} icon={u.archivedAt ? <UndoOutlined /> : <InboxOutlined />} disabled={!u.archivedAt && taken}
-          title={taken ? t("explorer.cannotArchiveTaken") : undefined}
-          onClick={() => (u.archivedAt ? archive.mutate() : modal.confirm({
-            title: t("explorer.archiveApartmentTitle", { number: u.unitNumber }), okText: t("common.archive"), okButtonProps: { danger: true },
-            content: t("explorer.archiveApartmentText"), onOk: () => archive.mutateAsync(),
-          }))}>
-          {u.archivedAt ? t("explorer.restoreApartment") : t("explorer.archiveApartment")}
-        </Button>
-      )}
+      {u.notes && <Block title={t("common.notes")}><ShortText text={u.notes} /></Block>}
+      <PhotoStrip owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={editable}
+        title={t("explorer.apartment", { number: u.unitNumber })} />
+
+      <Modal open={roomsOpen} onCancel={() => setRoomsOpen(false)} footer={null} width={720} destroyOnHidden
+        title={t("explorer.roomsOf", { number: u.unitNumber })}>
+        <RoomsEditor unitId={u.id} canEdit={editable} extra={source && u.rooms.length > 0 && (
+          <Button icon={<CopyOutlined />} onClick={() => setCopyOpen(true)}>{t("explorer.copyTo")}</Button>
+        )} />
+      </Modal>
       <ChangeStatusModal open={statusOpen} unitId={u.id} unitNumber={u.unitNumber} status={u.status} onClose={() => setStatusOpen(false)} />
       <UnitFormDrawer open={editOpen} unit={u} onClose={() => setEditOpen(false)} />
       {source && <CopyRoomsModal open={copyOpen} source={source} structure={structure} onClose={() => setCopyOpen(false)} />}
     </>
+  );
+}
+
+// ---------------------------------------------------------------- shared
+
+/** Long text cut to two lines, expandable. */
+function ShortText({ text }: { text: string }) {
+  const { t } = useT();
+  return (
+    <Typography.Paragraph type="secondary" style={{ margin: "6px 0 0" }}
+      ellipsis={{ rows: 2, expandable: "collapsible", symbol: (expanded) => (expanded ? t("explorer.showLess") : t("explorer.showMore")) }}>
+      {text}
+    </Typography.Paragraph>
+  );
+}
+
+/** A row of small thumbnails; uploading, ordering and deleting happen in a window. */
+function PhotoStrip({ owner, ownerId, photos, max, canEdit, title }: {
+  owner: PhotoOwner; ownerId: string; photos: Photo[]; max: number; canEdit: boolean; title: string;
+}) {
+  const { t } = useT();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const shown = photos.slice(0, 4);
+  return (
+    <Block title={t("explorer.photos", { count: photos.length, max })}
+      extra={(canEdit || photos.length > 0) && (
+        <Button type="link" size="small" style={{ padding: 0 }} onClick={() => setOpen(true)}>
+          {canEdit ? t("explorer.manage") : t("explorer.viewAll")}
+        </Button>
+      )}>
+      {photos.length === 0 ? (
+        canEdit
+          ? <Button block type="dashed" icon={<CameraOutlined />} onClick={() => setOpen(true)}>{t("explorer.addPhotos")}</Button>
+          : <Typography.Text type="secondary">{t("photos.none")}</Typography.Text>
+      ) : (
+        <Image.PreviewGroup items={photos.map((p) => p.url)}>
+          <Flex gap={6}>
+            {shown.map((photo, index) => (
+              <div key={photo.id} style={{ position: "relative", flex: "0 0 calc(25% - 5px)" }}>
+                <Image src={photo.url} alt={photo.caption ?? ""} width="100%" height={64}
+                  style={{ objectFit: "cover", borderRadius: 6 }} />
+                {index === 3 && photos.length > 4 && (
+                  <button type="button" onClick={() => setOpen(true)} style={{
+                    position: "absolute", inset: 0, borderRadius: 6, border: "none", cursor: "pointer",
+                    background: "rgba(0,0,0,.45)", color: "#fff", fontWeight: 600,
+                  }}>+{photos.length - 4}</button>
+                )}
+              </div>
+            ))}
+          </Flex>
+        </Image.PreviewGroup>
+      )}
+      <Modal open={open} onCancel={() => setOpen(false)} footer={null} width={760} destroyOnHidden
+        title={`${title} · ${t("explorer.photos", { count: photos.length, max })}`}>
+        <PhotoGallery owner={owner} ownerId={ownerId} photos={photos} max={max} canEdit={canEdit}
+          onChanged={() => invalidatePortfolio(queryClient)} />
+      </Modal>
+    </Block>
   );
 }

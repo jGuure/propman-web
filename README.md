@@ -21,11 +21,13 @@ office), and **rooms** describe an apartment. The API calls them `building`, `un
   the search box finds an apartment.
 - Clicking a flat or an apartment opens the side panel (a bottom sheet on phones), and the selection is in the
   URL (`?flat=…&apt=…`) with a breadcrumb *Properties › Property › Flat › Apartment*:
-  - **property**: shared amenities, flats with occupancy, address and map, photos;
+  - **property**: address, map and description (cut to two lines), flats with occupancy, shared amenities, photo thumbnails;
   - **flat**: status breakdown, add one/many apartments to it, its shared amenities (plus those inherited from
     the property), edit/archive;
-  - **apartment**: status change, rent, bed/bath/size, rooms (add, edit, reorder, copy the layout to other
-    apartments), own amenities plus those inherited from the flat and property, photos.
+  - **apartment**: status change, rent, bed/bath/size, rooms as small chips, own amenities (plus a count of those
+    shared by the flat and property), photo thumbnails; archive and copy-rooms sit in the ⋯ menu.
+  The panels stay short: rooms and photos are managed in a window (*Manage*: add, edit, reorder, copy the room
+  layout to other apartments; upload, order, cover, delete photos).
 - A set-up checklist (details, flats, apartments, rooms, amenities, photos) shows until the property is complete,
   each missing step one click away. A *List* toggle switches the drawing to the apartments table.
 
