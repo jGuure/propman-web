@@ -15,8 +15,8 @@ function UnitsPage() {
   const [addOpen, setAddOpen] = useState(false);
   return (
     <>
-      <PageHeader title="Units" description="Every rentable unit across your properties."
-        extra={canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add unit</Button>} />
+      <PageHeader title="Apartments" description="Every apartment, shop and office across your properties."
+        extra={canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add apartment</Button>} />
       <UnitsTable onOpenUnit={setOpenUnit} onAddUnit={canManage ? () => setAddOpen(true) : undefined} />
       <UnitDrawer unitId={openUnit} onClose={() => setOpenUnit(undefined)} />
       <UnitFormDrawer open={addOpen} onClose={() => setAddOpen(false)} onSaved={(u) => setOpenUnit(u.id)} />

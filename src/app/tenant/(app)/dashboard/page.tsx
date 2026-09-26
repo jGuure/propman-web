@@ -44,7 +44,7 @@ function DashboardPage() {
           <Empty image={<HomeOutlined style={{ fontSize: 56, color: "#0f766e" }} />}
             description={<>
               <Typography.Title level={4}>No properties yet</Typography.Title>
-              <Typography.Text type="secondary">Add a property, its buildings and units to see occupancy and rent here.</Typography.Text>
+              <Typography.Text type="secondary">Add a property, its flats and apartments to see occupancy and rent here.</Typography.Text>
             </>}>
             {canManage && (
               <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/properties?add=1")}>
@@ -60,11 +60,11 @@ function DashboardPage() {
             <Card><Statistic title="Properties" value={s.properties} prefix={<HomeOutlined />} /></Card>
           </Col>
           <Col xs={12} lg={6}>
-            <Card><Statistic title="Units" value={s.units} prefix={<AppstoreOutlined />}
-              suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>in {s.buildings} buildings</Typography.Text>} /></Card>
+            <Card><Statistic title="Apartments" value={s.units} prefix={<AppstoreOutlined />}
+              suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>in {s.buildings} flats</Typography.Text>} /></Card>
           </Col>
           <Col xs={12} lg={6}>
-            <Card><Statistic title="Vacant units" value={s.unitsByStatus.VACANT} styles={{ content: { color: "#16a34a" } }} /></Card>
+            <Card><Statistic title="Vacant apartments" value={s.unitsByStatus.VACANT} styles={{ content: { color: "#16a34a" } }} /></Card>
           </Col>
           <Col xs={12} lg={6}>
             <Card>
@@ -83,20 +83,20 @@ function DashboardPage() {
                 <Progress type="circle" percent={Math.round(s.occupancyRate * 100)} size={140}
                   format={() => formatPercent(s.occupancyRate)} strokeColor="#3b82f6" />
                 <Typography.Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
-                  Occupied units out of all units that can be rented (inactive units excluded).
+                  Occupied apartments out of all apartments that can be rented (inactive ones excluded).
                 </Typography.Text>
               </Flex>
             </Card>
           </Col>
           <Col xs={24} lg={16}>
-            <Card title="Units by status" style={{ height: "100%" }} extra={<Link href="/units">All units</Link>}>
+            <Card title="Apartments by status" style={{ height: "100%" }} extra={<Link href="/units">All apartments</Link>}>
               <StatusBar counts={s.unitsByStatus} />
-              <Typography.Title level={5} style={{ marginTop: 24 }}>Longest vacant units</Typography.Title>
+              <Typography.Title level={5} style={{ marginTop: 24 }}>Longest vacant apartments</Typography.Title>
               <Table size="small" rowKey="id" pagination={false} dataSource={s.vacantUnits}
-                locale={{ emptyText: "No vacant units" }}
+                locale={{ emptyText: "No vacant apartments" }}
                 onRow={(row) => ({ onClick: () => setOpenUnit(row.id), style: { cursor: "pointer" } })}
                 columns={[
-                  { title: "Unit", dataIndex: "unitNumber", render: (n: string) => <Typography.Link strong>{n}</Typography.Link> },
+                  { title: "Apartment", dataIndex: "unitNumber", render: (n: string) => <Typography.Link strong>{n}</Typography.Link> },
                   { title: "Property", key: "property", render: (_, r) => r.buildingName ? `${r.propertyName} · ${r.buildingName}` : r.propertyName },
                   { title: "Rent", key: "rent", align: "right", render: (_, r) => formatMoney(r.baseRent, r.currency) },
                   { title: "Vacant for", dataIndex: "vacantDays", align: "right", render: (d: number) => (d === 0 ? "Today" : `${d} day${d === 1 ? "" : "s"}`) },

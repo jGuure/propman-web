@@ -40,7 +40,7 @@ export function ChangeStatusModal({ open, unitId, unitNumber, status, onClose }:
     mutationFn: (values: { status: UnitStatus; reason?: string }) =>
       api.changeUnitStatus(unitId, values.status, values.reason),
     onSuccess: (unit) => {
-      message.success(`Unit ${unit.unitNumber} is now ${UNIT_STATUS_LABELS[unit.status].toLowerCase()}`);
+      message.success(`Apartment ${unit.unitNumber} is now ${UNIT_STATUS_LABELS[unit.status].toLowerCase()}`);
       invalidatePortfolio(queryClient);
       onClose();
     },
@@ -48,12 +48,12 @@ export function ChangeStatusModal({ open, unitId, unitNumber, status, onClose }:
   });
 
   return (
-    <Modal open={open} title={<>Change status of unit {unitNumber}</>} onCancel={onClose} onOk={() => form.submit()}
+    <Modal open={open} title={<>Change status of apartment {unitNumber}</>} onCancel={onClose} onOk={() => form.submit()}
       okText="Change status" okButtonProps={{ disabled: allowed.length === 0 }} confirmLoading={change.isPending}
       destroyOnHidden>
       <p>Current status: <UnitStatusTag status={status} /></p>
       {allowed.length === 0 ? (
-        <Alert type="info" showIcon title="Your role cannot change this unit's status." />
+        <Alert type="info" showIcon title="Your role cannot change this apartment's status." />
       ) : (
         <Form form={form} layout="vertical" requiredMark={false} onFinish={(v) => change.mutate(v)}>
           <Form.Item name="status" label="New status" rules={[{ required: true, message: "Choose a status" }]}>

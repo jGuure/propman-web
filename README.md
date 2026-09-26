@@ -4,9 +4,27 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
 
 - **Phase 0**: company registration, tenant sign-in and account flows, users, organization settings, profile, and
   the platform admin area.
-- **Phase 1**: portfolio dashboard, properties (table / cards), property page with buildings, units, amenities,
-  photos and a colored unit grid, units list with filters, unit drawer and page (status changes, history,
-  photos), bulk unit wizard with live preview, and amenities settings.
+- **Phase 1**: portfolio dashboard, properties (table / cards), the **property explorer**, apartments list with
+  filters, apartment drawer and page (status changes, history, rooms, photos), a wizard to add many apartments
+  with live preview, and amenities settings.
+
+Names in the app: a **flat** is a building/block of a property, an **apartment** is a rentable unit (flat, shop,
+office), and **rooms** describe an apartment. The API calls them `building`, `unit` and `room`.
+
+### The property explorer (`/properties/[id]`)
+
+- The flats are drawn as buildings side by side: floors from the top floor down to the basements, apartments as
+  boxes colored by status (an orange dot means no rooms described yet). The status legend highlights one status;
+  the search box finds an apartment.
+- Clicking a flat or an apartment opens the side panel (a bottom sheet on phones), and the selection is in the
+  URL (`?flat=…&apt=…`) with a breadcrumb *Properties › Property › Flat › Apartment*:
+  - **property**: shared amenities, flats with occupancy, address and map, photos;
+  - **flat**: status breakdown, add one/many apartments to it, its shared amenities (plus those inherited from
+    the property), edit/archive;
+  - **apartment**: status change, rent, bed/bath/size, rooms (add, edit, reorder, copy the layout to other
+    apartments), own amenities plus those inherited from the flat and property, photos.
+- A set-up checklist (details, flats, apartments, rooms, amenities, photos) shows until the property is complete,
+  each missing step one click away. A *List* toggle switches the drawing to the apartments table.
 
 Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript, Ant Design 6, TanStack Query, dayjs,
 browser-image-compression, Vitest.
@@ -109,8 +127,9 @@ src/
                             users, settings/organization, settings/amenities, profile
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
-    portfolio/              property/building/unit forms, units table, unit drawer + details, unit grid,
-                            photo gallery, amenity editor, status modal, status bar
+    portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,
+                            rooms editor, copy-rooms dialog, photo gallery, amenity editor, status modal
+      explorer/             property explorer: building drawing, side panel, set-up checklist
   lib/
     api/                    client, errors, typed endpoints, types
     auth/                   session storage, tenant and platform session contexts

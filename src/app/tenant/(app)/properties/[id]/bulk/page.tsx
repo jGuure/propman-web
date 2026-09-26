@@ -4,8 +4,8 @@ import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Card, Col, Descriptions, Flex, Form, Input, InputNumber, Result, Row, Select, Skeleton, Space, Steps, Switch, Tag, Typography } from "antd";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { invalidatePortfolio } from "@/components/portfolio/invalidate";
 import { errorMessage, isApiError } from "@/lib/api/errors";
 import type { BulkCreateResult, BulkPreview, BulkUnitsRequest, UnitType } from "@/lib/api/types";
@@ -58,8 +58,9 @@ function toRequest(v: WizardForm): BulkUnitsRequest {
   };
 }
 
-export default function BulkUnitsPage() {
+function BulkUnitsPage() {
   const { id } = useParams<{ id: string }>();
+  const preselectedFlat = useSearchParams().get("flat");
   const { api } = useTenant();
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -77,14 +78,15 @@ export default function BulkUnitsPage() {
 
   useEffect(() => {
     if (property.data) {
-      const first = property.data.buildings.find((b) => b.status === "ACTIVE");
+      const active = property.data.buildings.filter((b) => b.status === "ACTIVE");
+      const first = active.find((b) => b.id === preselectedFlat) ?? active[0];
       form.setFieldsValue({
         buildingId: first?.id, floorFrom: first ? 1 : 0, floorTo: first ? first.floorsCount : 0, unitsPerFloor: 4,
         numberPattern: first ? "{floor}{index:02}" : "{index}", startIndex: 1, type: "TWO_BEDROOM", bedrooms: 2,
         bathrooms: 1, furnished: false, currency: organizationCurrency, amenityIds: [],
       });
     }
-  }, [property.data, organizationCurrency, form]);
+  }, [property.data, organizationCurrency, form, preselectedFlat]);
 
   const total = values ? Math.max(0, (values.floorTo - values.floorFrom + 1) * (values.unitsPerFloor ?? 0)) : 0;
   const previewKey = values ? JSON.stringify([values.buildingId, values.floorFrom, values.floorTo, values.unitsPerFloor,
@@ -108,16 +110,16 @@ export default function BulkUnitsPage() {
     return <Alert type="error" showIcon title={errorMessage(property.error)} />;
   }
   if (!canManage || property.data.status === "ARCHIVED") {
-    return <Result status="403" title="Units cannot be added here" extra={<Link href={`/properties/${id}`}><Button>Back</Button></Link>} />;
+    return <Result status="403" title="Apartments cannot be added here" extra={<Link href={`/properties/${id}`}><Button>Back</Button></Link>} />;
   }
   if (result) {
     return (
       <Card>
-        <Result status="success" title={`${result.created} units created`}
+        <Result status="success" title={`${result.created} apartments created`}
           subTitle={`They are vacant and ready in ${building ? building.name : property.data.name}.`}
           extra={[
-            <Link key="grid" href={`/properties/${id}?tab=grid`}><Button type="primary">View unit grid</Button></Link>,
-            <Button key="more" onClick={() => { setResult(undefined); setStep(0); }}>Add more units</Button>,
+            <Link key="view" href={`/properties/${id}${result.buildingId ? `?flat=${result.buildingId}` : ""}`}><Button type="primary">See them in the building</Button></Link>,
+            <Button key="more" onClick={() => { setResult(undefined); setStep(0); }}>Add more apartments</Button>,
           ]} />
       </Card>
     );
@@ -164,7 +166,7 @@ export default function BulkUnitsPage() {
   return (
     <>
       <Link href={`/properties/${id}`}><Button type="link" icon={<ArrowLeftOutlined />} style={{ padding: 0 }}>{property.data.name}</Button></Link>
-      <Typography.Title level={3} style={{ marginTop: 4 }}>Bulk add units</Typography.Title>
+      <Typography.Title level={3} style={{ marginTop: 4 }}>Add many apartments</Typography.Title>
       <Card>
         <Steps current={step} style={{ marginBottom: 24 }} items={[
           { title: "Floors" }, { title: "Numbering" }, { title: "Details" }, { title: "Review" },
@@ -173,9 +175,9 @@ export default function BulkUnitsPage() {
           <div style={{ display: step === 0 ? "block" : "none" }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
-                <Form.Item name="buildingId" label="Building"
-                  extra={buildings.length === 0 ? "This property has no buildings; units belong to the property." : undefined}>
-                  <Select allowClear placeholder="No building" options={buildings.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))}
+                <Form.Item name="buildingId" label="Flat"
+                  extra={buildings.length === 0 ? "This property has no flats; apartments belong to the property." : undefined}>
+                  <Select allowClear placeholder="No flat" options={buildings.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))}
                     onChange={(v) => {
                       const b = buildings.find((x) => x.id === v);
                       form.setFieldsValue(b ? { floorFrom: 1, floorTo: b.floorsCount } : { floorFrom: 0, floorTo: 0 });
@@ -195,13 +197,13 @@ export default function BulkUnitsPage() {
                 </Form.Item>
               </Col>
               <Col xs={8} md={4}>
-                <Form.Item name="unitsPerFloor" label="Units per floor" rules={[{ required: true }]}>
+                <Form.Item name="unitsPerFloor" label="Apartments per floor" rules={[{ required: true }]}>
                   <InputNumber min={1} max={100} style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
             </Row>
             <Typography.Text type={total > (enums?.maxBulkUnits ?? 500) ? "danger" : "secondary"}>
-              {total} units will be created{total > (enums?.maxBulkUnits ?? 500) ? ` — the maximum is ${enums?.maxBulkUnits ?? 500} at once` : ""}.
+              {total} apartments will be created{total > (enums?.maxBulkUnits ?? 500) ? ` — the maximum is ${enums?.maxBulkUnits ?? 500} at once` : ""}.
               {building && ` ${building.name} has ${floorLabel(minFloor).toLowerCase()} to ${floorLabel(maxFloor).toLowerCase()}.`}
             </Typography.Text>
           </div>
@@ -265,9 +267,9 @@ export default function BulkUnitsPage() {
           {step === 3 && values && (
             <>
               <Descriptions bordered size="small" column={{ xs: 1, md: 2 }}>
-                <Descriptions.Item label="Building">{building?.name ?? "No building"}</Descriptions.Item>
+                <Descriptions.Item label="Flat">{building?.name ?? "No flat"}</Descriptions.Item>
                 <Descriptions.Item label="Floors">{floorLabel(values.floorFrom)} – {floorLabel(values.floorTo)}</Descriptions.Item>
-                <Descriptions.Item label="Units">{total} ({values.unitsPerFloor} per floor)</Descriptions.Item>
+                <Descriptions.Item label="Apartments">{total} ({values.unitsPerFloor} per floor)</Descriptions.Item>
                 <Descriptions.Item label="Numbers">{preview.data ? `${preview.data.units[0]?.unitNumber} … ${preview.data.units.at(-1)?.unitNumber}` : values.numberPattern}</Descriptions.Item>
                 <Descriptions.Item label="Type">{UNIT_TYPE_LABELS[values.type]} · {values.bedrooms ?? 0} bed / {values.bathrooms ?? 0} bath</Descriptions.Item>
                 <Descriptions.Item label="Rent">{formatMoney(values.baseRent, values.currency ?? organizationCurrency)} per month</Descriptions.Item>
@@ -288,7 +290,7 @@ export default function BulkUnitsPage() {
             {step === 3 && (
               <Button type="primary" loading={create.isPending} disabled={!preview.data || conflicts.length > 0}
                 onClick={() => create.mutate()}>
-                Create {total} units
+                Create {total} apartments
               </Button>
             )}
           </Space>
@@ -298,5 +300,13 @@ export default function BulkUnitsPage() {
         )}
       </Card>
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <BulkUnitsPage />
+    </Suspense>
   );
 }

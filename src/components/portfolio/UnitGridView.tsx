@@ -30,7 +30,7 @@ export function UnitGridView({ propertyId, buildings, onOpenUnit }: Props) {
 
   const options = [
     ...active.map((b) => ({ value: b.id, label: b.name })),
-    { value: NO_BUILDING, label: active.length ? "No building" : "All units" },
+    { value: NO_BUILDING, label: active.length ? "No flat" : "All apartments" },
   ];
 
   return (
@@ -57,7 +57,7 @@ export function UnitGridView({ propertyId, buildings, onOpenUnit }: Props) {
       {grid.isPending && <Skeleton active />}
       {grid.error && <Alert type="error" showIcon title={errorMessage(grid.error)} />}
       {grid.data && grid.data.floors.every((f) => f.units.length === 0) && (
-        <Empty description="No units here yet" />
+        <Empty description="No apartments here yet" />
       )}
       {grid.data && grid.data.floors.some((f) => f.units.length > 0) && (
         <Flex vertical gap={8}>

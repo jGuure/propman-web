@@ -68,7 +68,7 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
   const archive = useMutation({
     mutationFn: (unit: UnitSummary) => (unit.archived ? api.restoreUnit(unit.id) : api.archiveUnit(unit.id)),
     onSuccess: (unit) => {
-      message.success(unit.archivedAt ? `Unit ${unit.unitNumber} archived` : `Unit ${unit.unitNumber} restored`);
+      message.success(unit.archivedAt ? `Apartment ${unit.unitNumber} archived` : `Apartment ${unit.unitNumber} restored`);
       invalidatePortfolio(queryClient);
     },
     onError: (error) => message.error(errorMessage(error)),
@@ -85,8 +85,8 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
         : {
           key: "archive", label: "Archive", danger: true, disabled: unit.status === "OCCUPIED" || unit.status === "RESERVED",
           onClick: () => modal.confirm({
-            title: `Archive unit ${unit.unitNumber}?`,
-            content: "Archived units are hidden from lists and the grid. You can restore them later.",
+            title: `Archive apartment ${unit.unitNumber}?`,
+            content: "Archived apartments are hidden from lists and the floor plan. You can restore them later.",
             okText: "Archive", okButtonProps: { danger: true }, onOk: () => archive.mutateAsync(unit),
           }),
         });
@@ -96,14 +96,15 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
 
   const columns: TableProps<UnitSummary>["columns"] = [
     {
-      title: "Unit", dataIndex: "unitNumber", key: "unitNumber", sorter: true, fixed: "left", width: 110,
+      title: "Apartment", dataIndex: "unitNumber", key: "unitNumber", sorter: true, fixed: "left", width: 110,
       render: (number: string, unit) => <Typography.Link strong onClick={() => onOpenUnit(unit.id)}>{number}</Typography.Link>,
     },
     ...(propertyId ? [] : [{
       title: "Property", key: "property",
       render: (_: unknown, unit: UnitSummary) => unit.propertyName,
     }]),
-    { title: "Building", key: "building", render: (_, unit) => unit.buildingName ?? "—" },
+    { title: "Flat", key: "building", render: (_, unit) => unit.buildingName ?? "—" },
+    { title: "Rooms", key: "rooms", align: "right", render: (_, unit) => unit.roomCount || "—" },
     { title: "Floor", dataIndex: "floor", key: "floor", sorter: true, render: floorLabel },
     { title: "Type", dataIndex: "type", key: "type", sorter: true, render: (t: UnitType) => UNIT_TYPE_LABELS[t] },
     { title: "Beds / baths", key: "bedrooms", sorter: true, render: (_, u) => `${u.bedrooms} / ${u.bathrooms}` },
@@ -121,7 +122,7 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
       key: "actions", width: 56, align: "right", fixed: "right",
       render: (_, unit) => (
         <Dropdown menu={{ items: actions(unit) }} trigger={["click"]}>
-          <Button type="text" icon={<MoreOutlined />} aria-label={`Actions for unit ${unit.unitNumber}`} />
+          <Button type="text" icon={<MoreOutlined />} aria-label={`Actions for apartment ${unit.unitNumber}`} />
         </Dropdown>
       ),
     },
@@ -154,7 +155,7 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
     <Card>
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
         <Col xs={24} md={8} lg={6}>
-          <Input.Search key={params.search ?? ""} placeholder="Unit, property or building" allowClear
+          <Input.Search key={params.search ?? ""} placeholder="Apartment, property or flat" allowClear
             defaultValue={params.search}
             onSearch={(search) => url.set({ search })} />
         </Col>
@@ -168,7 +169,7 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
         )}
         {params.propertyId && (buildings.data?.length ?? 0) > 0 && (
           <Col xs={12} md={8} lg={4}>
-            <Select allowClear placeholder="Building" style={{ width: "100%" }} value={params.buildingId}
+            <Select allowClear placeholder="Flat" style={{ width: "100%" }} value={params.buildingId}
               onChange={(v) => url.set({ buildingId: v })}
               options={(buildings.data ?? []).map((b) => ({ value: b.id, label: b.name }))} />
           </Col>
@@ -216,16 +217,16 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
         onChange={onChange} scroll={{ x: 900 }} size="middle"
         locale={{
           emptyText: units.error ? errorMessage(units.error) : (
-            <Empty description={hasFilters ? "No units match these filters" : "No units yet"}>
+            <Empty description={hasFilters ? "No apartments match these filters" : "No apartments yet"}>
               {!hasFilters && canManage && onAddUnit && (
-                <Button type="primary" icon={<PlusOutlined />} onClick={onAddUnit}>Add a unit</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={onAddUnit}>Add an apartment</Button>
               )}
             </Empty>
           ),
         }}
         pagination={{
           current: params.page + 1, pageSize: params.size, total: units.data?.totalElements ?? 0,
-          showSizeChanger: true, showTotal: (total) => `${total} unit${total === 1 ? "" : "s"}`,
+          showSizeChanger: true, showTotal: (total) => `${total} apartment${total === 1 ? "" : "s"}`,
         }} />
       {hasFilters && (
         <Flex justify="end"><Button type="link" onClick={() => url.set(Object.fromEntries(

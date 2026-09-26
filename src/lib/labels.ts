@@ -1,4 +1,18 @@
-import type { AmenityScope, PropertyStatus, PropertyType, UnitStatus, UnitType } from "@/lib/api/types";
+import type { AmenityScope, PropertyStatus, PropertyType, RoomType, UnitStatus, UnitType } from "@/lib/api/types";
+
+export const ROOM_TYPE_LABELS: Record<RoomType, string> = {
+  BEDROOM: "Bedroom",
+  MASTER_BEDROOM: "Master bedroom",
+  LIVING_ROOM: "Living room",
+  DINING_ROOM: "Dining room",
+  KITCHEN: "Kitchen",
+  BATHROOM: "Bathroom",
+  TOILET: "Toilet",
+  STORE: "Store room",
+  BALCONY: "Balcony",
+  OFFICE: "Office / study",
+  OTHER: "Other",
+};
 
 export const UNIT_TYPE_LABELS: Record<UnitType, string> = {
   STUDIO: "Studio",
@@ -56,9 +70,9 @@ export const PROPERTY_STATUS_COLORS: Record<PropertyStatus, string> = {
 };
 
 export const AMENITY_SCOPE_LABELS: Record<AmenityScope, string> = {
-  UNIT: "Units",
-  PROPERTY: "Properties",
-  BOTH: "Properties and units",
+  UNIT: "Apartments",
+  PROPERTY: "Shared (property or flat)",
+  BOTH: "Shared and apartments",
 };
 
 export const SOMALI_CITIES = [

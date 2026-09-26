@@ -15,6 +15,7 @@ import { AmenityEditor } from "./AmenityEditor";
 import { ChangeStatusModal } from "./ChangeStatusModal";
 import { invalidatePortfolio } from "./invalidate";
 import { PhotoGallery } from "./PhotoGallery";
+import { RoomsEditor } from "./RoomsEditor";
 import { UnitStatusTag } from "./tags";
 import { UnitFormDrawer } from "./UnitFormDrawer";
 
@@ -42,7 +43,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   });
   const archive = useMutation({
     mutationFn: () => (unit.data?.archivedAt ? api.restoreUnit(unitId) : api.archiveUnit(unitId)),
-    onSuccess: (u) => { message.success(u.archivedAt ? "Unit archived" : "Unit restored"); refresh(); },
+    onSuccess: (u) => { message.success(u.archivedAt ? "Apartment archived" : "Apartment restored"); refresh(); },
     onError: (error) => message.error(errorMessage(error)),
   });
 
@@ -60,7 +61,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   const details = (
     <Descriptions column={compact ? 1 : { xs: 1, md: 2 }} size="small" bordered>
       <Descriptions.Item label="Property"><Link href={`/properties/${u.propertyId}`}>{u.propertyName}</Link></Descriptions.Item>
-      <Descriptions.Item label="Building">{u.buildingName ?? "—"}</Descriptions.Item>
+      <Descriptions.Item label="Flat">{u.buildingName ?? "—"}</Descriptions.Item>
       <Descriptions.Item label="Floor">{floorLabel(u.floor)}</Descriptions.Item>
       <Descriptions.Item label="Type">{UNIT_TYPE_LABELS[u.type]}</Descriptions.Item>
       <Descriptions.Item label="Bedrooms / bathrooms">{u.bedrooms} / {u.bathrooms}</Descriptions.Item>
@@ -93,7 +94,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
     <div>
       <Flex justify="space-between" align="center" wrap gap={12} style={{ marginBottom: 16 }}>
         <Space size="middle" align="center">
-          <Typography.Title level={compact ? 4 : 3} style={{ margin: 0 }}>Unit {u.unitNumber}</Typography.Title>
+          <Typography.Title level={compact ? 4 : 3} style={{ margin: 0 }}>Apartment {u.unitNumber}</Typography.Title>
           {archived ? <Typography.Text type="secondary">Archived</Typography.Text> : <UnitStatusTag status={u.status} />}
         </Space>
         <Space wrap>
@@ -104,10 +105,10 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
           {canManage && (archived ? (
             <Button icon={<UndoOutlined />} loading={archive.isPending} onClick={() => archive.mutate()}>Restore</Button>
           ) : (
-            <Button icon={<InboxOutlined />} danger disabled={taken} title={taken ? "Occupied or reserved units cannot be archived" : undefined}
+            <Button icon={<InboxOutlined />} danger disabled={taken} title={taken ? "Occupied or reserved apartments cannot be archived" : undefined}
               onClick={() => modal.confirm({
-                title: `Archive unit ${u.unitNumber}?`, okText: "Archive", okButtonProps: { danger: true },
-                content: "It will be hidden from lists and the grid. You can restore it later.",
+                title: `Archive apartment ${u.unitNumber}?`, okText: "Archive", okButtonProps: { danger: true },
+                content: "It will be hidden from lists and the floor plan. You can restore it later.",
                 onOk: () => archive.mutateAsync(),
               })}>Archive</Button>
           ))}
@@ -116,6 +117,9 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
       {compact ? (
         <Tabs items={[
           { key: "details", label: "Details", children: details },
+          {
+            key: "rooms", label: `Rooms (${u.rooms.length})`, children: <RoomsEditor unitId={u.id} canEdit={canManage && !archived} />,
+          },
           {
             key: "amenities", label: "Amenities", children: (
               <AmenityEditor scope="UNIT" value={u.amenities} canEdit={canManage && !archived}
@@ -133,6 +137,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
       ) : (
         <Flex vertical gap={16}>
           <Card title="Details">{details}</Card>
+          <Card title="Rooms"><RoomsEditor unitId={u.id} canEdit={canManage && !archived} /></Card>
           <Card title="Amenities">
             <AmenityEditor scope="UNIT" value={u.amenities} canEdit={canManage && !archived}
               saving={amenities.isPending} onSave={(ids) => amenities.mutate(ids)} />

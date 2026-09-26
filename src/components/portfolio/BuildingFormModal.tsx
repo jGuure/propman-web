@@ -33,7 +33,7 @@ export function BuildingFormModal({ open, propertyId, building, onClose }: Props
     mutationFn: (values: BuildingRequest) =>
       building ? api.updateBuilding(building.id, values) : api.createBuilding(propertyId, values),
     onSuccess: (saved) => {
-      message.success(building ? "Building saved" : `${saved.name} added`);
+      message.success(building ? "Flat saved" : `${saved.name} added`);
       invalidatePortfolio(queryClient);
       onClose();
     },
@@ -45,7 +45,7 @@ export function BuildingFormModal({ open, propertyId, building, onClose }: Props
   });
 
   return (
-    <Modal open={open} title={building ? `Edit ${building.name}` : "Add building"} onCancel={onClose}
+    <Modal open={open} title={building ? `Edit ${building.name}` : "Add flat"} onCancel={onClose}
       onOk={() => form.submit()} okText={building ? "Save" : "Add"} confirmLoading={save.isPending} destroyOnHidden>
       <Form<BuildingRequest> form={form} layout="vertical" requiredMark={false} onFinish={(v) => save.mutate(v)}>
         <Row gutter={16}>
@@ -56,7 +56,7 @@ export function BuildingFormModal({ open, propertyId, building, onClose }: Props
           </Col>
           <Col span={16}>
             <Form.Item name="name" label="Name" rules={[{ required: true, message: "Enter a name" }, { max: 100 }]}>
-              <Input placeholder="Block A" />
+              <Input placeholder="Flat A" />
             </Form.Item>
           </Col>
           <Col span={12}>

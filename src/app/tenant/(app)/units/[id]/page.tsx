@@ -10,7 +10,7 @@ export default function UnitPage() {
   const { id } = useParams<{ id: string }>();
   return (
     <>
-      <Link href="/units"><Button type="link" icon={<ArrowLeftOutlined />} style={{ padding: 0, marginBottom: 8 }}>Units</Button></Link>
+      <Link href="/units"><Button type="link" icon={<ArrowLeftOutlined />} style={{ padding: 0, marginBottom: 8 }}>Apartments</Button></Link>
       <UnitDetailsView unitId={id} />
     </>
   );

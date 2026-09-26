@@ -43,7 +43,7 @@ export default function AmenitiesPage() {
 
   return (
     <>
-      <PageHeader title="Amenities" description="Features you can tag properties and units with."
+      <PageHeader title="Amenities" description="Features you can give properties, flats and apartments."
         extra={canManageAmenities && <Button type="primary" icon={<PlusOutlined />} onClick={() => setModal({ open: true })}>Add amenity</Button>} />
       <Card>
         <Table<Amenity> rowKey="id" dataSource={amenities.data} loading={amenities.isFetching} pagination={false}

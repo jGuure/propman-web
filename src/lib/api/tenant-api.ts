@@ -14,7 +14,10 @@ import type {
   PropertyDetails,
   PropertyListParams,
   PropertyRequest,
+  PropertyStructure,
   PropertySummary,
+  Room,
+  RoomRequest,
   StatusChange,
   UnitDetails,
   UnitGrid,
@@ -96,7 +99,11 @@ export function tenantApi(client: ApiClient) {
     setPropertyAmenities: (id: string, amenityIds: string[]) =>
       client.put<PropertyDetails>(`/properties/${id}/amenities`, { amenityIds }),
 
+    propertyStructure: (id: string) => client.get<PropertyStructure>(`/properties/${id}/structure`),
+
     buildings: (propertyId: string) => client.get<Building[]>(`/properties/${propertyId}/buildings`),
+    setBuildingAmenities: (id: string, amenityIds: string[]) =>
+      client.put<Building>(`/buildings/${id}/amenities`, { amenityIds }),
     createBuilding: (propertyId: string, body: BuildingRequest) =>
       client.post<Building>(`/properties/${propertyId}/buildings`, body),
     updateBuilding: (id: string, body: BuildingRequest) => client.put<Building>(`/buildings/${id}`, body),
@@ -137,6 +144,14 @@ export function tenantApi(client: ApiClient) {
     setCoverPhoto: (owner: PhotoOwner, id: string, photoId: string) =>
       client.put<Photo[]>(`/${owner}/${id}/cover-photo`, { photoId }),
     deletePhoto: (photoId: string) => client.delete(`/photos/${photoId}`),
+
+    rooms: (unitId: string) => client.get<Room[]>(`/units/${unitId}/rooms`),
+    addRoom: (unitId: string, body: RoomRequest) => client.post<Room>(`/units/${unitId}/rooms`, body),
+    updateRoom: (roomId: string, body: RoomRequest) => client.put<Room>(`/rooms/${roomId}`, body),
+    deleteRoom: (roomId: string) => client.delete(`/rooms/${roomId}`),
+    reorderRooms: (unitId: string, roomIds: string[]) => client.patch<Room[]>(`/units/${unitId}/rooms/order`, { roomIds }),
+    copyRooms: (unitId: string, unitIds: string[]) =>
+      client.post<{ updated: number }>(`/units/${unitId}/rooms/copy`, { unitIds }),
   };
 }
 

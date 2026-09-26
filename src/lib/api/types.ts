@@ -244,6 +244,8 @@ export interface Building {
   status: BuildingStatus;
   archivedAt: string | null;
   unitStats: UnitStats;
+  /** Amenities shared by this flat. */
+  amenities: Amenity[];
 }
 
 export interface BuildingRequest {
@@ -282,6 +284,20 @@ export interface PropertyDetails extends Omit<PropertySummary, "coverPhotoUrl"> 
   buildings: Building[];
   amenities: Amenity[];
   photos: Photo[];
+  setup: PropertySetup;
+}
+
+export type SetupStepKey = "details" | "flats" | "apartments" | "rooms" | "amenities" | "photos";
+
+export interface PropertySetup {
+  flats: number;
+  apartments: number;
+  apartmentsWithRooms: number;
+  rooms: number;
+  amenities: number;
+  photos: number;
+  steps: { key: SetupStepKey; done: boolean }[];
+  completedSteps: number;
 }
 
 export interface PropertyRequest {
@@ -328,6 +344,7 @@ export interface UnitSummary {
   status: UnitStatus;
   archived: boolean;
   coverPhotoUrl: string | null;
+  roomCount: number;
 }
 
 export interface StatusChange {
@@ -341,7 +358,7 @@ export interface StatusChange {
   changedAt: string;
 }
 
-export interface UnitDetails extends Omit<UnitSummary, "archived"> {
+export interface UnitDetails extends Omit<UnitSummary, "archived" | "roomCount"> {
   notes: string | null;
   coverPhotoId: string | null;
   archivedAt: string | null;
@@ -349,7 +366,75 @@ export interface UnitDetails extends Omit<UnitSummary, "archived"> {
   updatedAt: string;
   amenities: Amenity[];
   photos: Photo[];
+  rooms: Room[];
   recentStatusChanges: StatusChange[];
+}
+
+export type RoomType =
+  | "BEDROOM"
+  | "MASTER_BEDROOM"
+  | "LIVING_ROOM"
+  | "DINING_ROOM"
+  | "KITCHEN"
+  | "BATHROOM"
+  | "TOILET"
+  | "STORE"
+  | "BALCONY"
+  | "OFFICE"
+  | "OTHER";
+
+export interface Room {
+  id: string;
+  unitId: string;
+  name: string;
+  type: RoomType;
+  sizeSqm: number | null;
+  notes: string | null;
+  sortOrder: number;
+}
+
+export interface RoomRequest {
+  name: string;
+  type: RoomType;
+  sizeSqm?: number | null;
+  notes?: string | null;
+}
+
+export interface StructureApartment {
+  id: string;
+  unitNumber: string;
+  type: UnitType;
+  status: UnitStatus;
+  baseRent: number;
+  currency: string;
+  bedrooms: number;
+  bathrooms: number;
+  rooms: { id: string; name: string; type: RoomType; sizeSqm: number | null }[];
+}
+
+export interface StructureFloor {
+  floor: number;
+  apartments: StructureApartment[];
+}
+
+/** The whole property as one tree. */
+export interface PropertyStructure {
+  propertyId: string;
+  name: string;
+  sharedAmenities: Amenity[];
+  flats: {
+    id: string;
+    code: string;
+    name: string;
+    floorsCount: number;
+    basementFloors: number;
+    hasLift: boolean;
+    amenities: Amenity[];
+    unitStats: UnitStats;
+    floors: StructureFloor[];
+  }[];
+  unassigned: StructureFloor[];
+  totals: { flats: number; floors: number; apartments: number; rooms: number };
 }
 
 export interface UnitRequest {

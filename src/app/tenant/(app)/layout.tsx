@@ -39,7 +39,7 @@ export default function TenantAppLayout({ children }: LayoutProps<"/tenant">) {
   const nav: NavItem[] = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
     { key: "properties", href: "/properties", label: "Properties", icon: <HomeOutlined /> },
-    { key: "units", href: "/units", label: "Units", icon: <AppstoreOutlined /> },
+    { key: "units", href: "/units", label: "Apartments", icon: <AppstoreOutlined /> },
     ...(permissions.includes("users:read")
       ? [{ key: "users", href: "/users", label: "Users", icon: <TeamOutlined /> }] : []),
     { key: "organization", href: "/settings/organization", label: "Organization", icon: <SettingOutlined /> },

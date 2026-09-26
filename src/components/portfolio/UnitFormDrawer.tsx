@@ -81,7 +81,7 @@ export function UnitFormDrawer({ open, propertyId, buildingId, unit, onClose, on
       return unit ? api.updateUnit(unit.id, body) : api.createUnit(pid, body);
     },
     onSuccess: (saved) => {
-      message.success(editing ? `Unit ${saved.unitNumber} saved` : `Unit ${saved.unitNumber} added`);
+      message.success(editing ? `Apartment ${saved.unitNumber} saved` : `Apartment ${saved.unitNumber} added`);
       invalidatePortfolio(queryClient);
       onSaved?.(saved);
       onClose();
@@ -106,7 +106,7 @@ export function UnitFormDrawer({ open, propertyId, buildingId, unit, onClose, on
   };
 
   return (
-    <Drawer open={open} onClose={onClose} title={editing ? `Edit unit ${unit.unitNumber}` : "Add unit"} size={600}
+    <Drawer open={open} onClose={onClose} title={editing ? `Edit apartment ${unit.unitNumber}` : "Add apartment"} size={600}
       destroyOnHidden extra={
         <Space>
           <Button onClick={onClose}>Cancel</Button>
@@ -125,14 +125,14 @@ export function UnitFormDrawer({ open, propertyId, buildingId, unit, onClose, on
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="buildingId" label="Building" extra={buildings.data?.length ? undefined : "No buildings: the unit belongs to the property directly."}>
-              <Select allowClear placeholder="No building" disabled={!selectedProperty}
+            <Form.Item name="buildingId" label="Flat" extra={buildings.data?.length ? undefined : "No flats: the apartment belongs to the property directly."}>
+              <Select allowClear placeholder="No flat" disabled={!selectedProperty}
                 options={(buildings.data ?? []).filter((b) => b.status === "ACTIVE")
                   .map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={8}>
-            <Form.Item name="unitNumber" label="Unit number" rules={[{ required: true, whitespace: true, message: "Enter a number" }, { max: 20 }]}>
+            <Form.Item name="unitNumber" label="Apartment number" rules={[{ required: true, whitespace: true, message: "Enter a number" }, { max: 20 }]}>
               <Input placeholder="101" autoFocus={!editing} />
             </Form.Item>
           </Col>

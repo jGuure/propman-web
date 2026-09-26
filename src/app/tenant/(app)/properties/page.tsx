@@ -67,7 +67,7 @@ function PropertiesPage() {
       title: "Location", key: "city", sorter: true, sortOrder: sortField === "city" ? (sortDir === "desc" ? "descend" : "ascend") : null,
       render: (_, p) => [p.district, p.city].filter(Boolean).join(", "),
     },
-    { title: "Units", key: "units", align: "right", render: (_, p) => p.unitStats.total },
+    { title: "Apartments", key: "units", align: "right", render: (_, p) => p.unitStats.total },
     { title: "Vacant", key: "vacant", align: "right", render: (_, p) => p.unitStats.vacant },
     {
       title: "Occupancy", key: "occupancy", width: 160,
@@ -88,7 +88,7 @@ function PropertiesPage() {
 
   return (
     <>
-      <PageHeader title="Properties" description="Sites and compounds with their buildings and units."
+      <PageHeader title="Properties" description="Your properties with their flats, apartments and rooms."
         extra={canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>Add property</Button>} />
       <Card style={{ marginBottom: 16 }}>
         <Flex gap={12} wrap justify="space-between">
@@ -143,7 +143,7 @@ function PropertiesPage() {
                   <Flex justify="space-between" align="start" gap={8}>
                     <div>
                       <Typography.Text strong>{p.name}</Typography.Text>
-                      <div><Typography.Text type="secondary" style={{ fontSize: 13 }}>{p.city} · {p.unitStats.total} units</Typography.Text></div>
+                      <div><Typography.Text type="secondary" style={{ fontSize: 13 }}>{p.city} · {p.unitStats.total} apartments</Typography.Text></div>
                     </div>
                     <PropertyStatusTag status={p.status} />
                   </Flex>
