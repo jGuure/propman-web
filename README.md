@@ -1,9 +1,15 @@
 # IL Software PropManagement — Web
 
-Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api). Phase 0: company registration,
-tenant sign-in and account flows, dashboard, users, organization settings, profile, and the platform admin area.
+Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
 
-Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript, Ant Design 6, TanStack Query, dayjs, Vitest.
+- **Phase 0**: company registration, tenant sign-in and account flows, users, organization settings, profile, and
+  the platform admin area.
+- **Phase 1**: portfolio dashboard, properties (table / cards), property page with buildings, units, amenities,
+  photos and a colored unit grid, units list with filters, unit drawer and page (status changes, history,
+  photos), bulk unit wizard with live preview, and amenities settings.
+
+Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript, Ant Design 6, TanStack Query, dayjs,
+browser-image-compression, Vitest.
 
 ## Getting started
 
@@ -75,7 +81,20 @@ root site, the new owner is sent to `https://<slug>…/welcome#token=<refresh to
 server, and the token is exchanged (and rotated) immediately.
 
 **Permissions** come from `GET /auth/me`: the menu and actions follow them (e.g. only owners see
-"Invite user"), and the API enforces the same rules.
+"Invite user"; accountants and staff see the portfolio read-only), and the API enforces the same rules. Unit
+status changes only offer what `GET /meta/enums` returns in `myStatusTransitions` for the user's role (staff:
+maintenance only), so the transition rules live in one place, the API.
+
+**Filters in the URL**: list pages (properties, units, property tabs) keep filters, sorting and paging in the
+query string (`src/lib/url-state.ts`), so refresh, back/forward and shared links keep the view.
+
+**Image uploads**: every image goes through `src/lib/compressImage.ts` before upload (logo, property and unit
+photos, and future modules): resized to 1600 px (logos 512 px), re-encoded to WebP at quality 0.8 in a web worker
+(which also drops EXIF data such as GPS location), and rejected in the browser if still over 1 MB. The API's
+1 MB limit (`ilsoftware.storage.max-file-size`) remains the source of truth.
+
+**Errors**: API errors carry a stable `code`; `src/lib/api/errors.ts` has a friendly message per code
+(`ERROR_MESSAGES`) used when the server sends no detail, and forms show field errors next to the fields.
 
 ## Layout
 
@@ -86,13 +105,20 @@ src/
     (site)/                 root site: landing page, registration
     tenant/                 tenant subdomains
       (auth)/               login, forgot/reset password, accept invite, welcome
-      (app)/                signed-in area: dashboard, users, settings/organization, profile
+      (app)/                signed-in area: dashboard, properties (+ [id], [id]/bulk), units (+ [id]),
+                            users, settings/organization, settings/amenities, profile
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
+    portfolio/              property/building/unit forms, units table, unit drawer + details, unit grid,
+                            photo gallery, amenity editor, status modal, status bar
   lib/
     api/                    client, errors, typed endpoints, types
     auth/                   session storage, tenant and platform session contexts
     config.ts, host.ts, forms.ts, format.ts, reference-data.ts, theme.ts
+    compressImage.ts        shared image compression for all uploads
+    labels.ts               labels and colors of types and statuses; Somali city suggestions
+    portfolio-hooks.ts      enums, amenities and portfolio permissions
+    url-state.ts            filters and paging in the query string
 ```
 
 ## Adding a page to the tenant app
@@ -106,5 +132,6 @@ src/
 
 ## Not included yet
 
-Somali translations (text is English and inline), an httpOnly-cookie session (tokens are in `localStorage`;
+Photo reordering is done with arrow buttons (no drag and drop yet). Somali translations (text is English and
+inline), an httpOnly-cookie session (tokens are in `localStorage`;
 consider a backend-for-frontend before handling payments), and end-to-end browser tests.
