@@ -2,7 +2,7 @@
 
 import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Card, Col, Flex, Form, Input, Popconfirm, Row, Select, Skeleton, Typography, Upload } from "antd";
+import { Alert, App, Button, Card, Col, Flex, Form, Input, InputNumber, Popconfirm, Row, Select, Skeleton, Typography, Upload } from "antd";
 import { useEffect, useMemo } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { PageHeader } from "@/components/PageHeader";
@@ -165,6 +165,12 @@ export default function OrganizationPage() {
                 <Col xs={24} md={12}>
                   <Form.Item label={t("organization.currency")}>
                     <Input value={t("organization.currencyFixed")} disabled />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="rentDueDay" label={t("organization.rentDueDay")} extra={t("organization.rentDueDayHelp")}
+                    rules={[{ required: true, message: t("validation.required") }]}>
+                    <InputNumber min={1} max={28} precision={0} style={{ width: "100%" }} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>

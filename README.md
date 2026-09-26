@@ -8,6 +8,12 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
   filters, apartment drawer and page (status changes, history, rooms, photos), a wizard to add many apartments
   with live preview, and amenities settings.
 
+- **Phase 2a**: residents and leases — a residents page (search by name/phone/ID, current / former / archived),
+  resident pages with their lease history, a leases list, and on every apartment a **Tenancy** section: rent out
+  (to an existing or a new resident), the current and next lease with household members and deposit, edit,
+  record the move-out (settling a held deposit), cancel an upcoming lease, and switch between renting the whole
+  apartment or room by room. The apartment status follows its leases; the building drawing shows the resident and
+  "rented / bedrooms" for room-by-room apartments. API: `ilsoftware-propman-api/docs/phase2a-residents-leases.md`.
 - **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
   and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
 
@@ -145,9 +151,10 @@ src/
     tenant/                 tenant subdomains
       (auth)/               login, forgot/reset password, accept invite, welcome
       (app)/                signed-in area: dashboard, properties (+ [id], [id]/bulk), units (+ [id]),
-                            users, settings/organization, settings/amenities, profile
+                            residents (+ [id]), leases, users, settings/organization, settings/amenities, profile
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
+    leases/                 residents and leases: tenancy section, lease card, rent-out form, move-out, resident form
     portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,
                             rooms editor, photo gallery, amenity editor, status modal
       explorer/             property explorer: building drawing, side panel, set-up checklist

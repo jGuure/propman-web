@@ -8,6 +8,17 @@ import type {
   BulkCreateResult,
   BulkPreview,
   BulkUnitsRequest,
+  CancelLeaseRequest,
+  CreateLeaseRequest,
+  EndLeaseRequest,
+  Lease,
+  LeaseListParams,
+  RentalMode,
+  ResidentDetails,
+  ResidentListParams,
+  ResidentRequest,
+  ResidentSummary,
+  UpdateLeaseRequest,
   DashboardSummary,
   Enums,
   Photo,
@@ -152,6 +163,31 @@ export function tenantApi(client: ApiClient) {
     reorderRooms: (unitId: string, roomIds: string[]) => client.patch<Room[]>(`/units/${unitId}/rooms/order`, { roomIds }),
     copyRooms: (unitId: string, unitIds: string[]) =>
       client.post<{ updated: number }>(`/units/${unitId}/rooms/copy`, { unitIds }),
+
+    residents: (params: ResidentListParams) =>
+      client.get<PageResponse<ResidentSummary>>("/residents", { ...params }),
+    resident: (id: string) => client.get<ResidentDetails>(`/residents/${id}`),
+    createResident: (body: ResidentRequest) => client.post<ResidentDetails>("/residents", body),
+    updateResident: (id: string, body: ResidentRequest) => client.put<ResidentDetails>(`/residents/${id}`, body),
+    archiveResident: (id: string) => client.post<ResidentDetails>(`/residents/${id}/archive`),
+    restoreResident: (id: string) => client.post<ResidentDetails>(`/residents/${id}/restore`),
+    deleteResident: (id: string) => client.delete(`/residents/${id}`),
+
+    /** `status` may be several statuses (sent comma-separated). */
+    leases: (params: LeaseListParams) =>
+      client.get<PageResponse<Lease>>("/leases", {
+        ...params,
+        status: Array.isArray(params.status) ? params.status.join(",") : params.status,
+      }),
+    lease: (id: string) => client.get<Lease>(`/leases/${id}`),
+    createLease: (body: CreateLeaseRequest) => client.post<Lease>("/leases", body),
+    updateLease: (id: string, body: UpdateLeaseRequest) => client.put<Lease>(`/leases/${id}`, body),
+    endLease: (id: string, body: EndLeaseRequest) => client.post<Lease>(`/leases/${id}/end`, body),
+    cancelLease: (id: string, body: CancelLeaseRequest) => client.post<Lease>(`/leases/${id}/cancel`, body),
+    depositReceived: (id: string, receivedOn: string) =>
+      client.post<Lease>(`/leases/${id}/deposit-received`, { receivedOn }),
+    setRentalMode: (unitId: string, rentalMode: RentalMode) =>
+      client.put<UnitDetails>(`/units/${unitId}/rental-mode`, { rentalMode }),
   };
 }
 

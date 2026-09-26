@@ -12,6 +12,7 @@ import { useTenant } from "@/lib/auth/tenant-context";
 import { formatDateTime, formatMoney, fromNow } from "@/lib/format";
 import { UNIT_STATUS_BAR, useLabels } from "@/lib/labels";
 import { useAllowedTransitions, usePortfolioPermissions } from "@/lib/portfolio-hooks";
+import { TenancySection } from "@/components/leases/TenancySection";
 import { AmenityEditor } from "./AmenityEditor";
 import { ChangeStatusModal } from "./ChangeStatusModal";
 import { invalidatePortfolio } from "./invalidate";
@@ -27,7 +28,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   const labels = useLabels();
   const { message, modal } = App.useApp();
   const queryClient = useQueryClient();
-  const { canManage } = usePortfolioPermissions();
+  const { canManage, canReadLeases } = usePortfolioPermissions();
   const [editOpen, setEditOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
@@ -101,7 +102,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
           {archived ? <Typography.Text type="secondary">{t("common.archived")}</Typography.Text> : <UnitStatusTag status={u.status} />}
         </Space>
         <Space wrap>
-          {!archived && transitions.length > 0 && (
+          {!archived && transitions.length > 0 && u.openLeases.length === 0 && (
             <Button icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>
           )}
           {!archived && canManage && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
@@ -119,6 +120,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
       </Flex>
       {compact ? (
         <Tabs items={[
+          ...(canReadLeases ? [{ key: "tenancy", label: t("leases.tenancy"), children: <TenancySection unit={u} /> }] : []),
           { key: "details", label: t("apartments.details"), children: details },
           {
             key: "rooms", label: `${t("apartments.rooms")} (${u.rooms.length})`, children: <RoomsEditor unitId={u.id} canEdit={canManage && !archived} />,
@@ -139,6 +141,7 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
         ]} />
       ) : (
         <Flex vertical gap={16}>
+          {canReadLeases && <Card title={t("leases.tenancy")}><TenancySection unit={u} /></Card>}
           <Card title={t("apartments.details")}>{details}</Card>
           <Card title={t("apartments.rooms")}><RoomsEditor unitId={u.id} canEdit={canManage && !archived} /></Card>
           <Card title={t("apartments.amenities")}>

@@ -11,7 +11,11 @@ export type Permission =
   | "properties:read"
   | "properties:manage"
   | "units:status"
-  | "amenities:manage";
+  | "amenities:manage"
+  | "residents:read"
+  | "residents:manage"
+  | "leases:read"
+  | "leases:manage";
 
 export interface PageResponse<T> {
   content: T[];
@@ -79,6 +83,8 @@ export interface Organization {
   address: string | null;
   currency: string;
   timezone: string;
+  /** Day of the month (1-28) rent is due for every lease. */
+  rentDueDay: number;
   logoUrl: string | null;
   updatedAt: string;
 }
@@ -135,6 +141,7 @@ export interface UpdateOrganizationRequest {
   address?: string | null;
   currency: string;
   timezone: string;
+  rentDueDay?: number;
 }
 
 export interface UserListParams {
@@ -342,6 +349,7 @@ export interface UnitSummary {
   currency: string;
   depositAmount: number | null;
   status: UnitStatus;
+  rentalMode: RentalMode;
   archived: boolean;
   coverPhotoUrl: string | null;
   roomCount: number;
@@ -368,6 +376,8 @@ export interface UnitDetails extends Omit<UnitSummary, "archived" | "roomCount">
   photos: Photo[];
   rooms: Room[];
   recentStatusChanges: StatusChange[];
+  /** Upcoming and active leases: one for a whole apartment, one per rented room. */
+  openLeases: Lease[];
 }
 
 export type RoomType =
@@ -391,6 +401,8 @@ export interface Room {
   sizeSqm: number | null;
   notes: string | null;
   sortOrder: number;
+  /** Bedrooms can be rented on their own in a room-by-room apartment. */
+  rentable: boolean;
 }
 
 export interface RoomRequest {
@@ -409,7 +421,21 @@ export interface StructureApartment {
   currency: string;
   bedrooms: number;
   bathrooms: number;
-  rooms: { id: string; name: string; type: RoomType; sizeSqm: number | null }[];
+  rentalMode: RentalMode;
+  /** Whole apartment: the current (else upcoming) primary resident. */
+  residentName: string | null;
+  rentableRooms: number;
+  /** Rooms with an upcoming or active lease (room-by-room apartments). */
+  takenRooms: number;
+  rooms: {
+    id: string;
+    name: string;
+    type: RoomType;
+    sizeSqm: number | null;
+    rentable: boolean;
+    leaseStatus: LeaseStatus | null;
+    residentName: string | null;
+  }[];
 }
 
 export interface StructureFloor {
@@ -554,4 +580,152 @@ export interface Enums {
   amenityScopes: AmenityScope[];
   maxBulkUnits: number;
   maxFileSizeBytes: number;
+  rentalModes: RentalMode[];
+  leaseStatuses: LeaseStatus[];
+  depositStatuses: DepositStatus[];
+  depositSettlements: DepositStatus[];
+  residentIdTypes: IdType[];
+  rentableRoomTypes: RoomType[];
+}
+
+// ---------------------------------------------------------------- residents & leases (phase 2a)
+
+export type RentalMode = "WHOLE" | "BY_ROOM";
+export type LeaseStatus = "UPCOMING" | "ACTIVE" | "ENDED" | "CANCELLED";
+export type DepositStatus = "NONE" | "PENDING" | "HELD" | "RETURNED" | "PARTLY_RETURNED" | "KEPT";
+export type IdType = "NATIONAL_ID" | "PASSPORT" | "OTHER";
+export type Tenancy = "CURRENT" | "FORMER" | "NONE";
+
+export interface ResidentRequest {
+  fullName: string;
+  phone: string;
+  altPhone?: string | null;
+  email?: string | null;
+  idType?: IdType | null;
+  idNumber?: string | null;
+  notes?: string | null;
+}
+
+export interface ResidentSummary {
+  id: string;
+  fullName: string;
+  phone: string;
+  altPhone: string | null;
+  email: string | null;
+  idType: IdType | null;
+  idNumber: string | null;
+  archived: boolean;
+  openLeases: number;
+  createdAt: string;
+}
+
+export interface ResidentDetails extends Omit<ResidentSummary, "archived" | "openLeases"> {
+  notes: string | null;
+  archivedAt: string | null;
+  updatedAt: string;
+  leases: Lease[];
+}
+
+export interface ResidentListParams {
+  search?: string;
+  tenancy?: Tenancy;
+  archived?: boolean;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export interface Occupant {
+  id?: string;
+  fullName: string;
+  phone?: string | null;
+  relationship?: string | null;
+}
+
+export interface Lease {
+  id: string;
+  status: LeaseStatus;
+  unit: {
+    id: string;
+    unitNumber: string;
+    floor: number;
+    propertyId: string;
+    propertyName: string;
+    buildingId: string | null;
+    buildingName: string | null;
+  };
+  room: { id: string; name: string } | null;
+  resident: { id: string; fullName: string; phone: string };
+  startDate: string;
+  endDate: string | null;
+  movedOutOn: string | null;
+  monthlyRent: number;
+  currency: string;
+  deposit: {
+    amount: number;
+    status: DepositStatus;
+    receivedOn: string | null;
+    returnedAmount: number | null;
+    note: string | null;
+  };
+  occupants: Occupant[];
+  notes: string | null;
+  endReason: string | null;
+  /** Active with a planned end within 30 days (or passed without a recorded move-out). */
+  endingSoon: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLeaseRequest {
+  unitId: string;
+  roomId?: string | null;
+  residentId?: string | null;
+  newResident?: ResidentRequest | null;
+  startDate: string;
+  endDate?: string | null;
+  monthlyRent: number;
+  depositAmount?: number | null;
+  depositReceivedOn?: string | null;
+  occupants?: Occupant[];
+  notes?: string | null;
+}
+
+export interface UpdateLeaseRequest {
+  startDate: string;
+  endDate?: string | null;
+  monthlyRent: number;
+  depositAmount?: number | null;
+  occupants?: Occupant[];
+  notes?: string | null;
+}
+
+export interface DepositSettlement {
+  outcome?: DepositStatus | null;
+  returnedAmount?: number | null;
+  note?: string | null;
+}
+
+export interface EndLeaseRequest {
+  movedOutOn: string;
+  reason?: string | null;
+  deposit?: DepositSettlement | null;
+}
+
+export interface CancelLeaseRequest {
+  reason?: string | null;
+  deposit?: DepositSettlement | null;
+}
+
+export interface LeaseListParams {
+  status?: LeaseStatus[] | string;
+  propertyId?: string;
+  buildingId?: string;
+  unitId?: string;
+  roomId?: string;
+  residentId?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
 }

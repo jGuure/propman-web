@@ -160,6 +160,9 @@ function ApartmentBox({ apartment: a, selected, dimmed, onClick }: {
       <div><b>{a.unitNumber}</b> · {labels.unitStatus(a.status)}</div>
       <div>{labels.unitType(a.type)} · {formatMoney(a.baseRent)}</div>
       <div>{a.rooms.length ? tn("count.rooms", a.rooms.length) : t("explorer.noRoomsYet")}</div>
+      {a.rentalMode === "BY_ROOM" ? (
+        <div>{t("rentalMode.BY_ROOM")} · {t("leases.roomsTaken", { taken: a.takenRooms, total: a.rentableRooms })}</div>
+      ) : a.residentName && <div>{a.residentName}</div>}
     </>}>
       <button type="button" onClick={onClick} aria-pressed={selected} aria-label={`${t("explorer.apartment", { number: a.unitNumber })}, ${labels.unitStatus(a.status)}`}
         style={{
@@ -169,6 +172,11 @@ function ApartmentBox({ apartment: a, selected, dimmed, onClick }: {
           transition: "opacity .15s, box-shadow .15s",
         }}>
         {a.unitNumber}
+        {a.rentalMode === "BY_ROOM" && (
+          <span style={{ position: "absolute", bottom: 1, left: 0, right: 0, fontSize: 9, fontWeight: 500, lineHeight: 1 }}>
+            {a.takenRooms}/{a.rentableRooms}
+          </span>
+        )}
         {a.rooms.length === 0 && (
           <span title={t("rooms.none")} style={{ position: "absolute", top: 3, right: 3, width: 6, height: 6, borderRadius: 3, background: "#f59e0b" }} />
         )}

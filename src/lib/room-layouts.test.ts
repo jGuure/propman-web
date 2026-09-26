@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { PropertyStructure, StructureApartment, UnitType } from "@/lib/api/types";
 import { layoutSuggestions } from "./room-layouts";
 
-const room = (name: string) => ({ id: name, name, type: "BEDROOM" as const, sizeSqm: 12 });
+const room = (name: string) => ({
+  id: name, name, type: "BEDROOM" as const, sizeSqm: 12, rentable: true, leaseStatus: null, residentName: null,
+});
 const apt = (id: string, type: UnitType, rooms: string[]): StructureApartment => ({
   id, unitNumber: id, type, status: "VACANT", baseRent: 300, currency: "USD", bedrooms: 2, bathrooms: 1,
-  rooms: rooms.map(room),
+  rentalMode: "WHOLE", residentName: null, rentableRooms: rooms.length, takenRooms: 0, rooms: rooms.map(room),
 });
 const structure = (flats: Record<string, StructureApartment[]>, unassigned: StructureApartment[] = []) => ({
   flats: Object.entries(flats).map(([id, apartments]) => ({ id, floors: [{ floor: 1, apartments }] })),

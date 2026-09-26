@@ -13,7 +13,7 @@ import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
 import { useLabels } from "@/lib/labels";
 import { layoutSuggestions } from "@/lib/room-layouts";
-import { useAllowedTransitions } from "@/lib/portfolio-hooks";
+import { useAllowedTransitions, usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { AmenityEditor } from "../AmenityEditor";
 import { BuildingFormModal } from "../BuildingFormModal";
 import { ChangeStatusModal } from "../ChangeStatusModal";
@@ -23,6 +23,7 @@ import { RoomsEditor } from "../RoomsEditor";
 import { StatusBar } from "../StatusBar";
 import { UnitStatusTag } from "../tags";
 import { UnitFormDrawer } from "../UnitFormDrawer";
+import { TenancySection } from "@/components/leases/TenancySection";
 
 function Block({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
   return (
@@ -182,6 +183,7 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [roomsOpen, setRoomsOpen] = useState(false);
+  const { canReadLeases } = usePortfolioPermissions();
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
   const transitions = useAllowedTransitions(unit.data?.status);
   const amenities = useMutation({
@@ -239,7 +241,7 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
         <Link href={`/units/${u.id}`}><Button type="text" icon={<ExportOutlined />} aria-label={t("explorer.openPage")} /></Link>
       </Flex>
       <Flex gap={8} style={{ marginBottom: 16 }}>
-        {transitions.length > 0 && <Button type="primary" icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>}
+        {transitions.length > 0 && u.openLeases.length === 0 && <Button type="primary" icon={<SwapOutlined />} onClick={() => setStatusOpen(true)}>{t("explorer.changeStatus")}</Button>}
         {editable && <Button icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>}
         {moreItems.length > 0 && (
           <Dropdown menu={{ items: moreItems }} trigger={["click"]}>
@@ -259,6 +261,11 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
           </div>
         ))}
       </Flex>
+      {canReadLeases && (
+        <Block title={t("leases.tenancy")}>
+          <TenancySection unit={u} />
+        </Block>
+      )}
       <Block title={`${tn("count.rooms", u.rooms.length)}${roomsSize > 0 ? ` · ${roomsSize} m²` : ""}`}
         extra={(editable || u.rooms.length > 0) && (
           <Button type="link" size="small" style={{ padding: 0 }} onClick={() => setRoomsOpen(true)}>
