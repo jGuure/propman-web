@@ -1,6 +1,27 @@
 import type { ApiClient } from "./client";
 import type {
+  Amenity,
+  AmenityScope,
   AuthResponse,
+  Building,
+  BuildingRequest,
+  BulkCreateResult,
+  BulkPreview,
+  BulkUnitsRequest,
+  DashboardSummary,
+  Enums,
+  Photo,
+  PropertyDetails,
+  PropertyListParams,
+  PropertyRequest,
+  PropertySummary,
+  StatusChange,
+  UnitDetails,
+  UnitGrid,
+  UnitListParams,
+  UnitRequest,
+  UnitStatus,
+  UnitSummary,
   InviteInfo,
   Me,
   Organization,
@@ -12,6 +33,8 @@ import type {
   UserRole,
   UserStatus,
 } from "./types";
+
+export type PhotoOwner = "properties" | "units";
 
 /** Endpoints of the current tenant (the client adds X-Tenant and the access token). */
 export function tenantApi(client: ApiClient) {
@@ -53,6 +76,67 @@ export function tenantApi(client: ApiClient) {
     updateProfile: (body: { fullName: string; phone?: string | null }) => client.put<User>("/users/me", body),
     changePassword: (currentPassword: string, newPassword: string) =>
       client.put<void>("/users/me/password", { currentPassword, newPassword }),
+
+    enums: () => client.get<Enums>("/meta/enums"),
+    dashboard: () => client.get<DashboardSummary>("/dashboard/summary"),
+
+    amenities: (scope?: AmenityScope) => client.get<Amenity[]>("/amenities", { scope }),
+    createAmenity: (body: { name: string; scope: AmenityScope }) => client.post<Amenity>("/amenities", body),
+    updateAmenity: (id: string, body: { name: string; scope: AmenityScope }) =>
+      client.put<Amenity>(`/amenities/${id}`, body),
+    deleteAmenity: (id: string) => client.delete(`/amenities/${id}`),
+
+    properties: (params: PropertyListParams) =>
+      client.get<PageResponse<PropertySummary>>("/properties", { ...params }),
+    property: (id: string) => client.get<PropertyDetails>(`/properties/${id}`),
+    createProperty: (body: PropertyRequest) => client.post<PropertyDetails>("/properties", body),
+    updateProperty: (id: string, body: PropertyRequest) => client.put<PropertyDetails>(`/properties/${id}`, body),
+    archiveProperty: (id: string) => client.post<PropertyDetails>(`/properties/${id}/archive`),
+    restoreProperty: (id: string) => client.post<PropertyDetails>(`/properties/${id}/restore`),
+    setPropertyAmenities: (id: string, amenityIds: string[]) =>
+      client.put<PropertyDetails>(`/properties/${id}/amenities`, { amenityIds }),
+
+    buildings: (propertyId: string) => client.get<Building[]>(`/properties/${propertyId}/buildings`),
+    createBuilding: (propertyId: string, body: BuildingRequest) =>
+      client.post<Building>(`/properties/${propertyId}/buildings`, body),
+    updateBuilding: (id: string, body: BuildingRequest) => client.put<Building>(`/buildings/${id}`, body),
+    archiveBuilding: (id: string) => client.post<Building>(`/buildings/${id}/archive`),
+    restoreBuilding: (id: string) => client.post<Building>(`/buildings/${id}/restore`),
+
+    units: (params: UnitListParams) => client.get<PageResponse<UnitSummary>>("/units", { ...params }),
+    unit: (id: string) => client.get<UnitDetails>(`/units/${id}`),
+    createUnit: (propertyId: string, body: UnitRequest) =>
+      client.post<UnitDetails>(`/properties/${propertyId}/units`, body),
+    updateUnit: (id: string, body: UnitRequest) => client.put<UnitDetails>(`/units/${id}`, body),
+    changeUnitStatus: (id: string, status: UnitStatus, reason?: string) =>
+      client.patch<UnitDetails>(`/units/${id}/status`, { status, reason }),
+    unitStatusHistory: (id: string, page: number, size: number) =>
+      client.get<PageResponse<StatusChange>>(`/units/${id}/status-history`, { page, size }),
+    archiveUnit: (id: string) => client.post<UnitDetails>(`/units/${id}/archive`),
+    restoreUnit: (id: string) => client.post<UnitDetails>(`/units/${id}/restore`),
+    setUnitAmenities: (id: string, amenityIds: string[]) =>
+      client.put<UnitDetails>(`/units/${id}/amenities`, { amenityIds }),
+    unitGrid: (propertyId: string, buildingId?: string) =>
+      client.get<UnitGrid>(`/properties/${propertyId}/unit-grid`, { buildingId }),
+    bulkPreview: (propertyId: string, body: BulkUnitsRequest) =>
+      client.post<BulkPreview>(`/properties/${propertyId}/units/bulk/preview`, body),
+    bulkCreate: (propertyId: string, body: BulkUnitsRequest) =>
+      client.post<BulkCreateResult>(`/properties/${propertyId}/units/bulk`, body),
+
+    /** `owner` is "properties" or "units". Returns every photo of the owner. */
+    addPhoto: (owner: PhotoOwner, id: string, file: File, caption?: string) => {
+      const form = new FormData();
+      form.append("file", file);
+      if (caption) {
+        form.append("caption", caption);
+      }
+      return client.post<Photo[]>(`/${owner}/${id}/photos`, form);
+    },
+    reorderPhotos: (owner: PhotoOwner, id: string, photoIds: string[]) =>
+      client.patch<Photo[]>(`/${owner}/${id}/photos/order`, { photoIds }),
+    setCoverPhoto: (owner: PhotoOwner, id: string, photoId: string) =>
+      client.put<Photo[]>(`/${owner}/${id}/cover-photo`, { photoId }),
+    deletePhoto: (photoId: string) => client.delete(`/photos/${photoId}`),
   };
 }
 

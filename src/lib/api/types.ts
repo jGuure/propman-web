@@ -7,7 +7,11 @@ export type Permission =
   | "organization:update"
   | "users:read"
   | "users:manage"
-  | "profile:update";
+  | "profile:update"
+  | "properties:read"
+  | "properties:manage"
+  | "units:status"
+  | "amenities:manage";
 
 export interface PageResponse<T> {
   content: T[];
@@ -180,4 +184,289 @@ export interface TenantListParams {
   status?: TenantStatus;
   page: number;
   size: number;
+}
+
+// ---------------------------------------------------------------- Phase 1: properties & units
+
+export type PropertyType = "RESIDENTIAL" | "COMMERCIAL" | "MIXED";
+export type PropertyStatus = "ACTIVE" | "INACTIVE" | "ARCHIVED";
+export type BuildingStatus = "ACTIVE" | "ARCHIVED";
+export type UnitType =
+  | "STUDIO"
+  | "ONE_BEDROOM"
+  | "TWO_BEDROOM"
+  | "THREE_BEDROOM"
+  | "FOUR_PLUS_BEDROOM"
+  | "SHOP"
+  | "OFFICE"
+  | "WAREHOUSE"
+  | "OTHER";
+export type UnitStatus = "VACANT" | "RESERVED" | "OCCUPIED" | "MAINTENANCE" | "INACTIVE";
+export type AmenityScope = "UNIT" | "PROPERTY" | "BOTH";
+export type StatusChangeSource = "MANUAL" | "SYSTEM" | "LEASE";
+
+export interface UnitStats {
+  total: number;
+  vacant: number;
+  reserved: number;
+  occupied: number;
+  maintenance: number;
+  inactive: number;
+  /** 0..1 */
+  occupancyRate: number;
+}
+
+export interface Amenity {
+  id: string;
+  name: string;
+  scope: AmenityScope;
+  system: boolean;
+  usageCount?: number | null;
+}
+
+export interface Photo {
+  id: string;
+  url: string;
+  caption: string | null;
+  sortOrder: number;
+  cover: boolean;
+}
+
+export interface Building {
+  id: string;
+  propertyId: string;
+  code: string;
+  name: string;
+  floorsCount: number;
+  basementFloors: number;
+  hasLift: boolean;
+  description: string | null;
+  status: BuildingStatus;
+  archivedAt: string | null;
+  unitStats: UnitStats;
+}
+
+export interface BuildingRequest {
+  code: string;
+  name: string;
+  floorsCount: number;
+  basementFloors?: number;
+  hasLift?: boolean;
+  description?: string | null;
+}
+
+export interface PropertySummary {
+  id: string;
+  code: string;
+  name: string;
+  type: PropertyType;
+  status: PropertyStatus;
+  country: string;
+  city: string;
+  district: string | null;
+  coverPhotoUrl: string | null;
+  unitStats: UnitStats;
+  createdAt: string;
+}
+
+export interface PropertyDetails extends Omit<PropertySummary, "coverPhotoUrl"> {
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  yearBuilt: number | null;
+  description: string | null;
+  coverPhotoId: string | null;
+  coverPhotoUrl: string | null;
+  archivedAt: string | null;
+  updatedAt: string;
+  buildings: Building[];
+  amenities: Amenity[];
+  photos: Photo[];
+}
+
+export interface PropertyRequest {
+  name: string;
+  type: PropertyType;
+  status?: Exclude<PropertyStatus, "ARCHIVED">;
+  country?: string;
+  city: string;
+  district?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  yearBuilt?: number | null;
+  description?: string | null;
+  amenityIds?: string[];
+}
+
+export interface PropertyListParams {
+  search?: string;
+  type?: PropertyType;
+  status?: PropertyStatus;
+  city?: string;
+  page: number;
+  size: number;
+  sort?: string;
+}
+
+export interface UnitSummary {
+  id: string;
+  unitNumber: string;
+  propertyId: string;
+  propertyName: string;
+  buildingId: string | null;
+  buildingName: string | null;
+  floor: number;
+  type: UnitType;
+  bedrooms: number;
+  bathrooms: number;
+  sizeSqm: number | null;
+  furnished: boolean;
+  baseRent: number;
+  currency: string;
+  depositAmount: number | null;
+  status: UnitStatus;
+  archived: boolean;
+  coverPhotoUrl: string | null;
+}
+
+export interface StatusChange {
+  id: string;
+  fromStatus: UnitStatus | null;
+  toStatus: UnitStatus;
+  reason: string | null;
+  source: StatusChangeSource;
+  changedBy: string | null;
+  changedByName: string | null;
+  changedAt: string;
+}
+
+export interface UnitDetails extends Omit<UnitSummary, "archived"> {
+  notes: string | null;
+  coverPhotoId: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  amenities: Amenity[];
+  photos: Photo[];
+  recentStatusChanges: StatusChange[];
+}
+
+export interface UnitRequest {
+  buildingId?: string | null;
+  unitNumber: string;
+  floor: number;
+  type: UnitType;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  sizeSqm?: number | null;
+  furnished?: boolean;
+  baseRent: number;
+  currency?: string | null;
+  depositAmount?: number | null;
+  notes?: string | null;
+  amenityIds?: string[];
+}
+
+export interface UnitListParams {
+  propertyId?: string;
+  buildingId?: string;
+  status?: UnitStatus;
+  type?: UnitType;
+  bedrooms?: number;
+  floor?: number;
+  furnished?: boolean;
+  minRent?: number;
+  maxRent?: number;
+  search?: string;
+  archived?: boolean;
+  page: number;
+  size: number;
+  sort?: string;
+}
+
+export interface BulkUnitsRequest {
+  buildingId?: string | null;
+  floorFrom: number;
+  floorTo: number;
+  unitsPerFloor: number;
+  numberPattern: string;
+  startIndex?: number;
+  defaults: {
+    type: UnitType;
+    bedrooms?: number | null;
+    bathrooms?: number | null;
+    sizeSqm?: number | null;
+    furnished?: boolean;
+    baseRent: number;
+    currency?: string | null;
+    depositAmount?: number | null;
+    amenityIds?: string[];
+  };
+}
+
+export interface BulkPreview {
+  count: number;
+  units: { floor: number; unitNumber: string; conflict: boolean }[];
+  conflicts: string[];
+}
+
+export interface BulkCreateResult {
+  created: number;
+  propertyId: string;
+  buildingId: string | null;
+}
+
+export interface UnitGridTile {
+  id: string;
+  unitNumber: string;
+  type: UnitType;
+  status: UnitStatus;
+  baseRent: number;
+  currency: string;
+}
+
+export interface UnitGrid {
+  propertyId: string;
+  buildingId: string | null;
+  floors: { floor: number; units: UnitGridTile[] }[];
+  counts: Record<UnitStatus, number>;
+}
+
+export interface MoneyAmount {
+  currency: string;
+  amount: number;
+}
+
+export interface DashboardSummary {
+  properties: number;
+  buildings: number;
+  units: number;
+  unitsByStatus: Record<UnitStatus, number>;
+  occupancyRate: number;
+  potentialMonthlyRent: MoneyAmount[];
+  vacantUnits: {
+    id: string;
+    unitNumber: string;
+    propertyId: string;
+    propertyName: string;
+    buildingName: string | null;
+    baseRent: number;
+    currency: string;
+    vacantSince: string;
+    vacantDays: number;
+  }[];
+}
+
+export interface Enums {
+  propertyTypes: PropertyType[];
+  propertyStatuses: PropertyStatus[];
+  unitTypes: { value: UnitType; defaultBedrooms: number }[];
+  unitStatuses: UnitStatus[];
+  statusTransitions: Record<UnitStatus, UnitStatus[]>;
+  myStatusTransitions: Record<UnitStatus, UnitStatus[]>;
+  reasonRequiredFor: UnitStatus[];
+  amenityScopes: AmenityScope[];
+  maxBulkUnits: number;
+  maxFileSizeBytes: number;
 }

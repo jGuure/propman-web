@@ -8,7 +8,7 @@ type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 export interface RequestOptions {
   method?: Method;
   body?: unknown;
-  query?: Record<string, string | number | undefined | null>;
+  query?: Record<string, string | number | boolean | undefined | null>;
   /** Send the access token (default true when a session exists). */
   auth?: boolean;
 }
