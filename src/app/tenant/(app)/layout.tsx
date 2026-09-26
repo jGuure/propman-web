@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardOutlined, SettingOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, DashboardOutlined, HomeOutlined, SettingOutlined, TagsOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import { Button, Flex, Result, Typography } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -38,9 +38,12 @@ export default function TenantAppLayout({ children }: LayoutProps<"/tenant">) {
   const { user, organization, permissions } = me.data;
   const nav: NavItem[] = [
     { key: "dashboard", href: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+    { key: "properties", href: "/properties", label: "Properties", icon: <HomeOutlined /> },
+    { key: "units", href: "/units", label: "Units", icon: <AppstoreOutlined /> },
     ...(permissions.includes("users:read")
       ? [{ key: "users", href: "/users", label: "Users", icon: <TeamOutlined /> }] : []),
     { key: "organization", href: "/settings/organization", label: "Organization", icon: <SettingOutlined /> },
+    { key: "amenities", href: "/settings/amenities", label: "Amenities", icon: <TagsOutlined /> },
   ];
 
   return (

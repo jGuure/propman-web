@@ -1,84 +1,111 @@
 "use client";
 
-import { CheckCircleFilled, ClockCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
+import { AppstoreOutlined, HomeOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card, Col, Descriptions, Flex, Row, Statistic, Typography } from "antd";
+import { Alert, Button, Card, Col, Empty, Flex, Progress, Row, Skeleton, Statistic, Table, Typography } from "antd";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { StatusBar } from "@/components/portfolio/StatusBar";
+import { UnitDrawer } from "@/components/portfolio/UnitDrawer";
+import { errorMessage } from "@/lib/api/errors";
 import { useMe, useTenant } from "@/lib/auth/tenant-context";
 import { tenantUrl } from "@/lib/config";
+import { formatMoney, formatPercent } from "@/lib/format";
+import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 
 function DashboardPage() {
   const { api } = useTenant();
   const { data: me } = useMe();
+  const router = useRouter();
+  const { canManage } = usePortfolioPermissions();
   const welcome = useSearchParams().get("welcome");
-  const canReadUsers = me?.permissions.includes("users:read") ?? false;
-  const canManage = me?.permissions.includes("users:manage") ?? false;
-  const active = useQuery({
-    queryKey: ["users", "count", "ACTIVE"],
-    queryFn: () => api.users({ status: "ACTIVE", page: 0, size: 1 }),
-    enabled: canReadUsers,
-  });
-  const invited = useQuery({
-    queryKey: ["users", "count", "INVITED"],
-    queryFn: () => api.users({ status: "INVITED", page: 0, size: 1 }),
-    enabled: canReadUsers,
-  });
+  const [openUnit, setOpenUnit] = useState<string>();
+  const summary = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+
   if (!me) {
     return null;
   }
-  const { user, organization } = me;
-  const steps = [
-    { done: !!organization.logoUrl, label: "Upload your company logo", href: "/settings/organization" },
-    { done: !!organization.address && !!organization.phone, label: "Complete the organization profile", href: "/settings/organization" },
-    { done: (active.data?.totalElements ?? 0) + (invited.data?.totalElements ?? 0) > 1, label: "Invite your team", href: "/users" },
-  ];
+  const s = summary.data;
+  const firstName = me.user.fullName.split(" ")[0];
 
   return (
     <>
-      <PageHeader title={`Welcome, ${user.fullName.split(" ")[0]}`} description={organization.name} />
+      <PageHeader title={`Welcome, ${firstName}`} description={me.organization.name} />
       {welcome && (
         <Alert type="success" showIcon closable style={{ marginBottom: 20 }} title="Your organization is ready"
-          description={`${organization.name} is live at ${tenantUrl(organization.slug)}. Bookmark it — this is where your team signs in.`} />
+          description={`${me.organization.name} is live at ${tenantUrl(me.organization.slug)}. Start by adding your first property.`} />
       )}
-      <Row gutter={[16, 16]}>
-        {canReadUsers && (
-          <>
-            <Col xs={24} sm={12} lg={6}>
-              <Card><Statistic title="Active users" value={active.data?.totalElements ?? "–"} prefix={<TeamOutlined />} /></Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card><Statistic title="Pending invitations" value={invited.data?.totalElements ?? "–"} prefix={<ClockCircleOutlined />} /></Card>
-            </Col>
-          </>
-        )}
-        <Col xs={24} lg={canReadUsers ? 12 : 24}>
-          <Card title="Organization" extra={<Link href="/settings/organization">View</Link>}>
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="Address">{tenantUrl(organization.slug)}</Descriptions.Item>
-              <Descriptions.Item label="City">{organization.city ?? "—"}</Descriptions.Item>
-              <Descriptions.Item label="Currency">{organization.currency}</Descriptions.Item>
-              <Descriptions.Item label="Time zone">{organization.timezone}</Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
-        {canManage && (
-          <Col xs={24}>
-            <Card title="Getting started">
-              <Flex vertical gap={14}>
-                {steps.map((step) => (
-                  <Link key={step.label} href={step.href} style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    {step.done ? <CheckCircleFilled style={{ color: "#16a34a" }} /> : <UserAddOutlined />}
-                    <Typography.Text delete={step.done}>{step.label}</Typography.Text>
-                  </Link>
-                ))}
+      {summary.error && <Alert type="error" showIcon title={errorMessage(summary.error)} style={{ marginBottom: 16 }} />}
+      {summary.isPending && <Card><Skeleton active /></Card>}
+      {s && s.properties === 0 && (
+        <Card>
+          <Empty image={<HomeOutlined style={{ fontSize: 56, color: "#0f766e" }} />}
+            description={<>
+              <Typography.Title level={4}>No properties yet</Typography.Title>
+              <Typography.Text type="secondary">Add a property, its buildings and units to see occupancy and rent here.</Typography.Text>
+            </>}>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/properties?add=1")}>
+                Add your first property
+              </Button>
+            )}
+          </Empty>
+        </Card>
+      )}
+      {s && s.properties > 0 && (
+        <Row gutter={[16, 16]}>
+          <Col xs={12} lg={6}>
+            <Card><Statistic title="Properties" value={s.properties} prefix={<HomeOutlined />} /></Card>
+          </Col>
+          <Col xs={12} lg={6}>
+            <Card><Statistic title="Units" value={s.units} prefix={<AppstoreOutlined />}
+              suffix={<Typography.Text type="secondary" style={{ fontSize: 14 }}>in {s.buildings} buildings</Typography.Text>} /></Card>
+          </Col>
+          <Col xs={12} lg={6}>
+            <Card><Statistic title="Vacant units" value={s.unitsByStatus.VACANT} styles={{ content: { color: "#16a34a" } }} /></Card>
+          </Col>
+          <Col xs={12} lg={6}>
+            <Card>
+              <Statistic title="Potential monthly rent" value=" " formatter={() => (
+                <Flex vertical>
+                  {s.potentialMonthlyRent.length === 0 ? "—" : s.potentialMonthlyRent.map((r) => (
+                    <span key={r.currency}>{formatMoney(r.amount, r.currency)}</span>
+                  ))}
+                </Flex>
+              )} />
+            </Card>
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card title="Occupancy" style={{ height: "100%" }}>
+              <Flex vertical align="center" gap={12}>
+                <Progress type="circle" percent={Math.round(s.occupancyRate * 100)} size={140}
+                  format={() => formatPercent(s.occupancyRate)} strokeColor="#3b82f6" />
+                <Typography.Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
+                  Occupied units out of all units that can be rented (inactive units excluded).
+                </Typography.Text>
               </Flex>
             </Card>
           </Col>
-        )}
-      </Row>
+          <Col xs={24} lg={16}>
+            <Card title="Units by status" style={{ height: "100%" }} extra={<Link href="/units">All units</Link>}>
+              <StatusBar counts={s.unitsByStatus} />
+              <Typography.Title level={5} style={{ marginTop: 24 }}>Longest vacant units</Typography.Title>
+              <Table size="small" rowKey="id" pagination={false} dataSource={s.vacantUnits}
+                locale={{ emptyText: "No vacant units" }}
+                onRow={(row) => ({ onClick: () => setOpenUnit(row.id), style: { cursor: "pointer" } })}
+                columns={[
+                  { title: "Unit", dataIndex: "unitNumber", render: (n: string) => <Typography.Link strong>{n}</Typography.Link> },
+                  { title: "Property", key: "property", render: (_, r) => r.buildingName ? `${r.propertyName} · ${r.buildingName}` : r.propertyName },
+                  { title: "Rent", key: "rent", align: "right", render: (_, r) => formatMoney(r.baseRent, r.currency) },
+                  { title: "Vacant for", dataIndex: "vacantDays", align: "right", render: (d: number) => (d === 0 ? "Today" : `${d} day${d === 1 ? "" : "s"}`) },
+                ]} />
+            </Card>
+          </Col>
+        </Row>
+      )}
+      <UnitDrawer unitId={openUnit} onClose={() => setOpenUnit(undefined)} />
     </>
   );
 }

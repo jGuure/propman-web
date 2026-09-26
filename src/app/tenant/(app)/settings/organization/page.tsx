@@ -6,14 +6,14 @@ import { Alert, App, Button, Card, Col, Flex, Form, Input, Popconfirm, Row, Sele
 import { useEffect, useMemo } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { PageHeader } from "@/components/PageHeader";
-import { errorMessage } from "@/lib/api/errors";
+import { errorMessage, isApiError } from "@/lib/api/errors";
 import type { Organization, UpdateOrganizationRequest } from "@/lib/api/types";
 import { useCan, useTenant } from "@/lib/auth/tenant-context";
+import { compressImage } from "@/lib/compressImage";
 import { tenantUrl } from "@/lib/config";
 import { applyFieldErrors } from "@/lib/forms";
 import { countryOptions, currencyOptions, timezoneOptions } from "@/lib/reference-data";
 
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 export default function OrganizationPage() {
@@ -50,12 +50,12 @@ export default function OrganizationPage() {
     },
   });
   const upload = useMutation({
-    mutationFn: (file: File) => api.uploadLogo(file),
+    mutationFn: async (file: File) => api.uploadLogo(await compressImage(file, { maxWidthOrHeight: 512 })),
     onSuccess: (updated) => {
       refresh(updated);
       message.success("Logo updated");
     },
-    onError: (error) => message.error(errorMessage(error)),
+    onError: (error) => message.error(isApiError(error) ? errorMessage(error) : error.message),
   });
   const removeLogo = useMutation({
     mutationFn: () => api.deleteLogo(),
@@ -93,15 +93,13 @@ export default function OrganizationPage() {
                     beforeUpload={(file) => {
                       if (!LOGO_TYPES.includes(file.type)) {
                         message.error("Use a PNG, JPEG or WebP image");
-                      } else if (file.size > MAX_LOGO_BYTES) {
-                        message.error("The logo must be at most 2 MB");
                       } else {
                         upload.mutate(file);
                       }
                       return false;
                     }}>
                     <Button icon={<UploadOutlined />} loading={upload.isPending}>
-                      {org.logoUrl ? "Replace" : "Upload"}
+                      {upload.isPending ? "Optimizing…" : org.logoUrl ? "Replace" : "Upload"}
                     </Button>
                   </Upload>
                   {org.logoUrl && (
@@ -112,7 +110,7 @@ export default function OrganizationPage() {
                 </Flex>
               )}
               <Typography.Text type="secondary" style={{ textAlign: "center", fontSize: 13 }}>
-                PNG, JPEG or WebP, up to 2 MB. A square image works best.
+                PNG, JPEG or WebP. Large images are resized automatically. A square image works best.
               </Typography.Text>
             </Flex>
           </Card>
