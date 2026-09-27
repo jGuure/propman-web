@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PropertyStructure, StructureApartment, UnitType } from "@/lib/api/types";
-import { layoutSuggestions } from "./room-layouts";
+import { bedroomMismatch, layoutSuggestions } from "./room-layouts";
 
 const room = (name: string) => ({
   id: name, name, type: "BEDROOM" as const, sizeSqm: 12, rentable: true, leaseStatus: null, residentName: null,
@@ -28,5 +28,22 @@ describe("layoutSuggestions", () => {
       A: ["1", "2", "3", "4", "5"].map((n) => apt(`A${n}`, "STUDIO", n === "1" || n === "2" ? ["Room"] : [`Room ${n}`])),
     }, [apt("X", "STUDIO", [])]);
     expect(layoutSuggestions(s, "X", "STUDIO", null).map((a) => a.id)).toEqual(["A1", "A3", "A4"]);
+  });
+});
+
+describe("bedroomMismatch", () => {
+  const rooms = (...types: string[]) => types.map((type) => ({ type: type as "BEDROOM" }));
+
+  it("reports missing bedrooms once rooms are described", () => {
+    expect(bedroomMismatch("THREE_BEDROOM", [])).toBeNull();
+    expect(bedroomMismatch("THREE_BEDROOM", rooms("LIVING_ROOM", "BATHROOM")))
+      .toEqual({ kind: "missing", expected: 3, described: 0 });
+    expect(bedroomMismatch("THREE_BEDROOM", rooms("MASTER_BEDROOM", "BEDROOM", "BEDROOM", "KITCHEN"))).toBeNull();
+  });
+
+  it("reports extra bedrooms except for 4+ and non-residential types", () => {
+    expect(bedroomMismatch("STUDIO", rooms("BEDROOM"))).toEqual({ kind: "extra", expected: 0, described: 1 });
+    expect(bedroomMismatch("FOUR_PLUS_BEDROOM", rooms("BEDROOM", "BEDROOM", "BEDROOM", "BEDROOM", "BEDROOM"))).toBeNull();
+    expect(bedroomMismatch("SHOP", rooms("OTHER"))).toBeNull();
   });
 });

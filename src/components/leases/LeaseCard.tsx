@@ -28,8 +28,10 @@ export function usePeriod() {
  * One lease with its actions. `show` = "resident" (on an apartment: who rents it) or "place" (on a resident: which
  * apartment).
  */
-export function LeaseCard({ lease, show, canManage, hideRoom = false }: {
+export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }: {
   lease: Lease; show: "resident" | "place"; canManage: boolean; hideRoom?: boolean;
+  /** What the lease covers, e.g. "Includes: Master bedroom, Kitchen…" (shown when known). */
+  includes?: string;
 }) {
   const { t, tn } = useT();
   const period = usePeriod();
@@ -87,6 +89,9 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false }: {
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>/ {t("common.monthlyRent").toLowerCase()}</Typography.Text>
         {lease.deposit.status !== "NONE" && <DepositTag status={lease.deposit.status} />}
       </Flex>
+      {includes && (
+        <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{includes}</Typography.Text>
+      )}
       {lease.occupants.length > 0 && (
         <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>
           {tn("leases.household", lease.occupants.length)}: {lease.occupants

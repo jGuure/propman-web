@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/errors";
 import type { PhotoOwner } from "@/lib/api/tenant-api";
-import type { Amenity, Building, Photo, PropertyDetails, PropertyStructure, StructureApartment } from "@/lib/api/types";
+import type { Amenity, Building, Photo, PropertyDetails, PropertyStructure, StructureApartment, RoomType } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { useT } from "@/i18n/provider";
 import { formatMoney, formatPercent } from "@/lib/format";
@@ -23,9 +23,10 @@ import { RoomsEditor } from "../RoomsEditor";
 import { StatusBar } from "../StatusBar";
 import { UnitStatusTag } from "../tags";
 import { UnitFormDrawer } from "../UnitFormDrawer";
+import { BedroomWarning } from "../BedroomWarning";
 import { TenancySection } from "@/components/leases/TenancySection";
 
-function Block({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
+export function Block({ title, extra, children }: { title: string; extra?: ReactNode; children: ReactNode }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
@@ -183,6 +184,7 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [roomsOpen, setRoomsOpen] = useState(false);
+  const [addRequest, setAddRequest] = useState<{ type: RoomType; at: number }>();
   const { canReadLeases } = usePortfolioPermissions();
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
   const transitions = useAllowedTransitions(unit.data?.status);
@@ -272,6 +274,9 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
             {editable ? t("explorer.manage") : t("explorer.viewAll")}
           </Button>
         )}>
+        <BedroomWarning type={u.type} rooms={u.rooms} canEdit={editable}
+          onAddBedroom={() => { setAddRequest({ type: "BEDROOM", at: Date.now() }); setRoomsOpen(true); }}
+          onChangeType={() => setEditOpen(true)} />
         {u.rooms.length === 0 ? (
           editable ? (
             <Flex vertical gap={8}>
@@ -323,9 +328,9 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
       <PhotoStrip owner="units" ownerId={u.id} photos={u.photos} max={10} canEdit={editable}
         title={t("explorer.apartment", { number: u.unitNumber })} />
 
-      <Modal open={roomsOpen} onCancel={() => setRoomsOpen(false)} footer={null} width={720} destroyOnHidden
+      <Modal open={roomsOpen} onCancel={() => { setRoomsOpen(false); setAddRequest(undefined); }} footer={null} width={720} destroyOnHidden
         title={t("explorer.roomsOf", { number: u.unitNumber })}>
-        <RoomsEditor unitId={u.id} canEdit={editable} />
+        <RoomsEditor unitId={u.id} canEdit={editable} addRequest={addRequest} />
       </Modal>
       <ChangeStatusModal open={statusOpen} unitId={u.id} unitNumber={u.unitNumber} status={u.status} onClose={() => setStatusOpen(false)} />
       <UnitFormDrawer open={editOpen} unit={u} onClose={() => setEditOpen(false)} />
@@ -336,7 +341,7 @@ export function ApartmentInspector({ unitId, property, structure, flatAmenities,
 // ---------------------------------------------------------------- shared
 
 /** Long text cut to two lines, expandable. */
-function ShortText({ text }: { text: string }) {
+export function ShortText({ text }: { text: string }) {
   const { t } = useT();
   return (
     <Typography.Paragraph type="secondary" style={{ margin: "6px 0 0" }}
@@ -347,7 +352,7 @@ function ShortText({ text }: { text: string }) {
 }
 
 /** A row of small thumbnails; uploading, ordering and deleting happen in a window. */
-function PhotoStrip({ owner, ownerId, photos, max, canEdit, title }: {
+export function PhotoStrip({ owner, ownerId, photos, max, canEdit, title }: {
   owner: PhotoOwner; ownerId: string; photos: Photo[]; max: number; canEdit: boolean; title: string;
 }) {
   const { t } = useT();

@@ -44,6 +44,10 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
     earliestStart,
   });
   const locked = unit.openLeases.length > 0;
+  const roomNames = (list: Room[]) => list.map((r) => r.name).join(", ");
+  const shared = unit.rooms.filter((r) => !r.rentable);
+  const wholeIncludes = unit.rooms.length ? t("leases.includes", { rooms: roomNames(unit.rooms) }) : undefined;
+  const roomShares = shared.length ? t("leases.shares", { rooms: roomNames(shared) }) : undefined;
 
   const modeSwitch = editable ? (
     <Tooltip title={locked ? t("leases.rentalModeLocked") : undefined}>
@@ -64,7 +68,7 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
     const nextStart = lastOpen?.endDate ? dayjs(lastOpen.endDate).add(1, "day").format("YYYY-MM-DD") : null;
     body = (
       <Flex vertical gap={8}>
-        {unit.openLeases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} />)}
+        {unit.openLeases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} includes={wholeIncludes} />)}
         {editable && canBook && (
           rentable ? (
             <Button type={active ? "default" : "primary"} block icon={active ? <PlusOutlined /> : <KeyOutlined />}
@@ -92,7 +96,7 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
                 {leases.length === 0 && <Typography.Text type="success" style={{ fontSize: 13 }}>{t("leases.availableRoom")}</Typography.Text>}
               </Flex>
               <Flex vertical gap={6}>
-                {leases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} hideRoom />)}
+                {leases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} hideRoom includes={roomShares} />)}
                 {editable && rentable && (!last || last.endDate) && (
                   <Button size="small" icon={<KeyOutlined />} onClick={() => rentOut(room, next)}>
                     {last ? t("leases.bookNext") : t("leases.rentOutRoom", { room: room.name })}
