@@ -62,10 +62,11 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
   let body;
   if (unit.rentalMode === "WHOLE") {
     const active = unit.openLeases.find((l) => l.status === "ACTIVE");
-    const lastOpen = unit.openLeases.at(-1);
-    // a new lease can follow once the last open lease has a planned end
-    const canBook = !lastOpen || !!lastOpen.endDate;
-    const nextStart = lastOpen?.endDate ? dayjs(lastOpen.endDate).add(1, "day").format("YYYY-MM-DD") : null;
+    const upcoming = unit.openLeases.find((l) => l.status === "UPCOMING");
+    // rent out when free; book the next resident only while someone lives there with a planned end
+    const canBook = !upcoming && (!active || !!active.endDate);
+    const nextStart = active?.endDate ? dayjs(active.endDate).add(1, "day").format("YYYY-MM-DD") : null;
+    const lastOpen = active;
     body = (
       <Flex vertical gap={8}>
         {unit.openLeases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} includes={wholeIncludes} />)}
@@ -87,8 +88,10 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
       <Flex vertical gap={10}>
         {bedrooms.map((room) => {
           const leases = unit.openLeases.filter((l) => l.room?.id === room.id);
-          const last = leases.at(-1);
-          const next = last?.endDate ? dayjs(last.endDate).add(1, "day").format("YYYY-MM-DD") : null;
+          const current = leases.find((l) => l.status === "ACTIVE");
+          const booked = leases.some((l) => l.status === "UPCOMING");
+          const canBookRoom = !booked && (!current || !!current.endDate);
+          const next = current?.endDate ? dayjs(current.endDate).add(1, "day").format("YYYY-MM-DD") : null;
           return (
             <div key={room.id}>
               <Flex justify="space-between" align="center" style={{ marginBottom: 4 }}>
@@ -97,9 +100,9 @@ export function TenancySection({ unit }: { unit: UnitDetails }) {
               </Flex>
               <Flex vertical gap={6}>
                 {leases.map((l) => <LeaseCard key={l.id} lease={l} show="resident" canManage={editable} hideRoom includes={roomShares} />)}
-                {editable && rentable && (!last || last.endDate) && (
+                {editable && rentable && canBookRoom && (
                   <Button size="small" icon={<KeyOutlined />} onClick={() => rentOut(room, next)}>
-                    {last ? t("leases.bookNext") : t("leases.rentOutRoom", { room: room.name })}
+                    {current ? t("leases.bookNext") : t("leases.rentOutRoom", { room: room.name })}
                   </Button>
                 )}
               </Flex>

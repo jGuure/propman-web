@@ -1,7 +1,8 @@
 "use client";
 
-import { DollarOutlined, EditOutlined, HomeOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, WalletOutlined } from "@ant-design/icons";
-import { Button, Dropdown, Flex, Typography, type MenuProps } from "antd";
+import { DollarOutlined, EditOutlined, HomeOutlined, LoginOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, WalletOutlined } from "@ant-design/icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { App, Button, Dropdown, Flex, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
@@ -10,6 +11,9 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { AccountDrawer } from "@/components/payments/AccountDrawer";
 import { AccountLine } from "@/components/payments/AccountLine";
 import { PaymentModal } from "@/components/payments/PaymentModal";
+import { invalidatePortfolio } from "@/components/portfolio/invalidate";
+import { errorMessage } from "@/lib/api/errors";
+import { useTenant } from "@/lib/auth/tenant-context";
 import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { DepositReceivedModal } from "./DepositReceivedModal";
 import { EndLeaseModal } from "./EndLeaseModal";
@@ -48,13 +52,21 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
   // upcoming leases have no bills yet, unless someone paid in advance
   const billed = (lease.status === "ACTIVE" || lease.status === "ENDED") || lease.account.credit > 0;
   const open = lease.status === "ACTIVE" || lease.status === "UPCOMING";
+  const { api } = useTenant();
+  const { message, modal } = App.useApp();
+  const queryClient = useQueryClient();
+  const start = useMutation({
+    mutationFn: () => api.startLease(lease.id),
+    onSuccess: () => {
+      message.success(t("leases.movedIn", { name: lease.resident.fullName }));
+      invalidatePortfolio(queryClient);
+    },
+    onError: (error) => message.error(errorMessage(error)),
+  });
 
   const more: MenuProps["items"] = [
     ...(lease.deposit.status === "PENDING" ? [{
       key: "deposit", icon: <WalletOutlined />, label: t("leases.markDepositReceived"), onClick: () => setDepositOpen(true),
-    }] : []),
-    ...(lease.status === "UPCOMING" ? [{
-      key: "cancel", icon: <StopOutlined />, danger: true, label: t("leases.cancel"), onClick: () => setEndMode("cancel"),
     }] : []),
     ...(show === "resident" ? [{
       key: "resident", label: <Link href={`/residents/${lease.resident.id}`}>{t("leases.viewResident")}</Link>,
@@ -128,6 +140,15 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
           <Button size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>
           {lease.status === "ACTIVE" && (
             <Button size="small" icon={<LogoutOutlined />} onClick={() => setEndMode("end")}>{t("leases.recordMoveOut")}</Button>
+          )}
+          {lease.status === "UPCOMING" && (
+            <>
+              <Button size="small" type="primary" icon={<LoginOutlined />} loading={start.isPending} onClick={() => modal.confirm({
+                title: t("leases.moveInTitle", { name: lease.resident.fullName }), content: t("leases.moveInText"),
+                okText: t("leases.moveInNow"), onOk: () => start.mutateAsync(),
+              })}>{t("leases.moveInNow")}</Button>
+              <Button size="small" danger icon={<StopOutlined />} onClick={() => setEndMode("cancel")}>{t("leases.cancelReservation")}</Button>
+            </>
           )}
           {more.length > 0 && (
             <Dropdown menu={{ items: more }} trigger={["click"]}>

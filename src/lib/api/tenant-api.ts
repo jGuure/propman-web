@@ -194,6 +194,7 @@ export function tenantApi(client: ApiClient) {
     lease: (id: string) => client.get<Lease>(`/leases/${id}`),
     createLease: (body: CreateLeaseRequest) => client.post<Lease>("/leases", body),
     updateLease: (id: string, body: UpdateLeaseRequest) => client.put<Lease>(`/leases/${id}`, body),
+    startLease: (id: string) => client.post<Lease>(`/leases/${id}/start`),
     endLease: (id: string, body: EndLeaseRequest) => client.post<Lease>(`/leases/${id}/end`, body),
     cancelLease: (id: string, body: CancelLeaseRequest) => client.post<Lease>(`/leases/${id}/cancel`, body),
     depositReceived: (id: string, receivedOn: string) =>
