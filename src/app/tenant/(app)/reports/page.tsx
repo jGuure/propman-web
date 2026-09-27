@@ -27,14 +27,14 @@ function Tile({ label, value, help, tone }: { label: string; value: string; help
   );
 }
 
-function Toolbar({ children, onExport }: { children?: ReactNode; onExport?: () => void }) {
+function Toolbar({ children, onExport, printHref }: { children?: ReactNode; onExport?: () => void; printHref: string }) {
   const { t } = useT();
   return (
     <Flex className="no-print" justify="space-between" wrap gap={12} style={{ marginBottom: 16 }}>
       <Flex gap={12} wrap>{children}</Flex>
       <Flex gap={8}>
         {onExport && <Button icon={<DownloadOutlined />} onClick={onExport}>{t("reports.exportCsv")}</Button>}
-        <Button icon={<PrinterOutlined />} onClick={() => window.print()}>{t("reports.print")}</Button>
+        <a href={printHref} target="_blank" rel="noreferrer"><Button icon={<PrinterOutlined />}>{t("reports.print")}</Button></a>
       </Flex>
     </Flex>
   );
@@ -83,7 +83,8 @@ function IncomeTab() {
 
   return (
     <>
-      <Toolbar onExport={exportCsv}>
+      <Toolbar onExport={exportCsv}
+        printHref={`/print/report/income?from=${from}&to=${to}${propertyId ? `&propertyId=${propertyId}` : ""}`}>
         <DatePicker.RangePicker picker="month" allowClear={false} format="MMM YYYY"
           value={[dayjs(`${from}-01`), dayjs(`${to}-01`)]}
           onChange={(v) => v?.[0] && v?.[1] && url.set({ from: v[0].format("YYYY-MM"), to: v[1].format("YYYY-MM") })} />
@@ -193,7 +194,7 @@ function ArrearsTab() {
 
   return (
     <>
-      <Toolbar onExport={exportCsv}>
+      <Toolbar onExport={exportCsv} printHref={`/print/report/arrears${propertyId ? `?propertyId=${propertyId}` : ""}`}>
         <PropertyFilter value={propertyId} onChange={(v) => url.set({ propertyId: v })} />
       </Toolbar>
       {report.error && <Alert type="error" showIcon title={errorMessage(report.error)} />}
@@ -239,7 +240,7 @@ function OccupancyTab() {
 
   return (
     <>
-      <Toolbar onExport={exportCsv} />
+      <Toolbar onExport={exportCsv} printHref="/print/report/occupancy" />
       {report.error && <Alert type="error" showIcon title={errorMessage(report.error)} />}
       {report.isPending && <Skeleton active />}
       {r && (
@@ -268,8 +269,6 @@ function ReportsPage() {
   const tab = url.get("tab") ?? "income";
   return (
     <>
-      <style>{`@media print { .ant-layout-sider, .ant-layout-header, .no-print, .ant-tabs-nav { display: none !important; }
-        .ant-layout-content { padding: 0 !important; } }`}</style>
       <PageHeader title={t("reports.title")} description={t("reports.subtitle")} />
       <Card>
         <Tabs activeKey={tab} onChange={(key) => url.set({ tab: key === "income" ? undefined : key, from: undefined, to: undefined })}

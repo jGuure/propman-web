@@ -20,8 +20,8 @@ export function whatsappNumber(phone: string): string | null {
 }
 
 /** A sheet of paper with the organization's letterhead; the toolbar is not printed. */
-export function PrintFrame({ title, number, whatsapp, children }: {
-  title: string; number?: string; whatsapp?: { phone: string; text: string }; children: ReactNode;
+export function PrintFrame({ title, number, subtitle, whatsapp, children }: {
+  title: string; number?: string; subtitle?: ReactNode; whatsapp?: { phone: string; text: string }; children: ReactNode;
 }) {
   const { api } = useTenant();
   const { t } = useT();
@@ -32,7 +32,9 @@ export function PrintFrame({ title, number, whatsapp, children }: {
 
   return (
     <div style={{ padding: "24px 16px" }}>
-      <style>{`@media print { .no-print { display: none !important; } body, .print-bg { background: #fff !important; }
+      <style>{`* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @media print { .no-print { display: none !important; } body, .print-bg { background: #fff !important; }
+        tr { break-inside: avoid; } thead { display: table-header-group; }
         .paper { box-shadow: none !important; margin: 0 !important; max-width: none !important; } @page { margin: 14mm; } }`}</style>
       <Flex className="no-print" justify="center" gap={8} wrap style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>{t("receipts.print")}</Button>
@@ -61,6 +63,7 @@ export function PrintFrame({ title, number, whatsapp, children }: {
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: "#0f766e", textTransform: "uppercase", letterSpacing: 1 }}>{title}</div>
             {number && <div style={{ fontSize: 13, color: "#555" }}>{t("receipts.receiptNo", { number })}</div>}
+            {subtitle && <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{subtitle}</div>}
           </div>
         </Flex>
         {children}
