@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { LeaseCard } from "@/components/leases/LeaseCard";
+import { PrintLink } from "@/components/payments/PrintPreview";
 import { ResidentFormModal } from "@/components/leases/ResidentFormModal";
 import { whatsappNumber } from "@/components/payments/PrintFrame";
 import { useT } from "@/i18n/provider";
@@ -102,7 +103,7 @@ export default function ResidentPage() {
     {
       title: t("receipts.receipt"), key: "receipt",
       render: (_: unknown, p: PaymentRecord) => (
-        <a href={`/print/receipt/${p.id}`} target="_blank" rel="noreferrer"><FileTextOutlined /> {p.receiptNumber}</a>
+        <PrintLink href={`/print/receipt/${p.id}`}><FileTextOutlined /> {p.receiptNumber}</PrintLink>
       ),
     },
     {
@@ -213,7 +214,7 @@ export default function ResidentPage() {
               {open.filter((l) => l.status === "ACTIVE").map((l) => (
                 <Flex key={l.id} justify="space-between" style={{ fontSize: 13 }}>
                   <span>{l.unit.unitNumber}{l.room ? ` · ${l.room.name}` : ""}</span>
-                  <a href={`/print/statement/${l.id}`} target="_blank" rel="noreferrer"><FileTextOutlined /> {t("receipts.statement")}</a>
+                  <PrintLink href={`/print/statement/${l.id}`}><FileTextOutlined /> {t("receipts.statement")}</PrintLink>
                 </Flex>
               ))}
             </Card>

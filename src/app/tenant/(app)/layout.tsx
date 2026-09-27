@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
+import { PrintPreviewHost } from "@/components/payments/PrintPreview";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import { useMe, useTenant } from "@/lib/auth/tenant-context";
@@ -73,6 +74,7 @@ export default function TenantAppLayout({ children }: LayoutProps<"/tenant">) {
         </Flex>
       }>
       {children}
+      <PrintPreviewHost />
     </AppShell>
   );
 }

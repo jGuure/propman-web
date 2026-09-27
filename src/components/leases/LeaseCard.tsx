@@ -6,6 +6,7 @@ import { App, Button, Dropdown, Flex, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
+import { openPrintPreview } from "@/components/payments/PrintPreview";
 import type { Lease } from "@/lib/api/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { AccountDrawer } from "@/components/payments/AccountDrawer";
@@ -71,7 +72,7 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
       { key: "account", icon: <WalletOutlined />, label: t("payments.account"), onClick: () => setAccountOpen(true) },
       {
         key: "statement", icon: <FileTextOutlined />,
-        label: <a href={`/print/statement/${lease.id}`} target="_blank" rel="noreferrer">{t("receipts.statement")}</a>,
+        label: t("receipts.statement"), onClick: () => openPrintPreview(`/print/statement/${lease.id}`),
       },
     ] : []),
     ...(canManage && lease.deposit.status === "PENDING" ? [{

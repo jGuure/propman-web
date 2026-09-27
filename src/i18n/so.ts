@@ -196,6 +196,8 @@ export const so: Messages<Dictionary> = {
     receiptNo: "Lambar {number}",
     statement: "Warbixinta kirada",
     print: "Daabac / U kaydi PDF",
+    preview: "Eeg ka hor daabacaadda",
+    openNewTab: "Ku fur tab cusub",
     whatsapp: "Ku dir WhatsApp",
     open: "Rasiid",
     date: "Taariikh",

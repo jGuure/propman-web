@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { openPrintPreview } from "@/components/payments/PrintPreview";
 import { whatsappNumber } from "@/components/payments/PrintFrame";
 import { IncomeChart } from "@/components/reports/IncomeChart";
 import { useT } from "@/i18n/provider";
@@ -34,7 +35,7 @@ function Toolbar({ children, onExport, printHref }: { children?: ReactNode; onEx
       <Flex gap={12} wrap>{children}</Flex>
       <Flex gap={8}>
         {onExport && <Button icon={<DownloadOutlined />} onClick={onExport}>{t("reports.exportCsv")}</Button>}
-        <a href={printHref} target="_blank" rel="noreferrer"><Button icon={<PrinterOutlined />}>{t("reports.print")}</Button></a>
+        <Button icon={<PrinterOutlined />} onClick={() => openPrintPreview(printHref)}>{t("reports.print")}</Button>
       </Flex>
     </Flex>
   );

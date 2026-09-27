@@ -192,6 +192,8 @@ export const en = {
     receiptNo: "No. {number}",
     statement: "Rent statement",
     print: "Print / Save as PDF",
+    preview: "Print preview",
+    openNewTab: "Open in a new tab",
     whatsapp: "Send on WhatsApp",
     open: "Receipt",
     date: "Date",

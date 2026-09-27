@@ -6,6 +6,7 @@ import { Alert, App, Button, DatePicker, Flex, Form, Input, InputNumber, Modal, 
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect } from "react";
 import { invalidatePortfolio } from "@/components/portfolio/invalidate";
+import { openPrintPreview } from "@/components/payments/PrintPreview";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { Charge, PaymentMethod } from "@/lib/api/types";
@@ -64,9 +65,9 @@ export function PaymentModal({ open, target, charge, onClose }: {
       notification.success({
         title: t("payments.recorded", { amount: formatMoney(charge ? charge.remaining : v.amount) }),
         description: newest && (
-          <a href={`/print/receipt/${newest.id}`} target="_blank" rel="noreferrer">
-            <Button size="small" icon={<FileTextOutlined />}>{t("receipts.viewReceipt")} {newest.receiptNumber}</Button>
-          </a>
+          <Button size="small" icon={<FileTextOutlined />} onClick={() => openPrintPreview(`/print/receipt/${newest.id}`)}>
+            {t("receipts.viewReceipt")} {newest.receiptNumber}
+          </Button>
         ),
         placement: "bottomRight",
       });
