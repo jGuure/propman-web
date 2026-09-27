@@ -1,6 +1,6 @@
 export type UserRole = "OWNER" | "MANAGER" | "ACCOUNTANT" | "STAFF";
 export type UserStatus = "ACTIVE" | "INVITED" | "DISABLED";
-export type TenantStatus = "PROVISIONING" | "PENDING_REVIEW" | "ACTIVE" | "SUSPENDED" | "FAILED";
+export type TenantStatus = "PROVISIONING" | "PENDING_REVIEW" | "ACTIVE" | "SUSPENDED" | "REJECTED" | "FAILED";
 /** Who created the organization: the company on the website, or a platform admin. */
 export type TenantSource = "SIGNUP" | "ADMIN";
 
@@ -187,6 +187,8 @@ export interface TenantDetails extends TenantSummary {
   phone: string | null;
   country: string;
   suspendedReason: string | null;
+  rejectedReason: string | null;
+  rejectedAt: string | null;
   activatedAt: string | null;
   suspendedAt: string | null;
   updatedAt: string;

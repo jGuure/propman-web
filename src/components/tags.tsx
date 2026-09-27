@@ -22,6 +22,7 @@ const TENANT_STATUS_COLORS: Record<TenantStatus, string> = {
   SUSPENDED: "red",
   PROVISIONING: "blue",
   PENDING_REVIEW: "gold",
+  REJECTED: "volcano",
   FAILED: "default",
 };
 

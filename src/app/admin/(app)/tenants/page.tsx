@@ -14,7 +14,7 @@ import type { TenantListParams, TenantSource, TenantStatus, TenantSummary } from
 import { usePlatform } from "@/lib/auth/platform-context";
 import { formatDate, formatDateTime } from "@/lib/format";
 
-const STATUSES: TenantStatus[] = ["PENDING_REVIEW", "ACTIVE", "SUSPENDED", "PROVISIONING", "FAILED"];
+const STATUSES: TenantStatus[] = ["PENDING_REVIEW", "ACTIVE", "SUSPENDED", "REJECTED", "PROVISIONING", "FAILED"];
 const SOURCE_LABELS: Record<TenantSource, string> = { SIGNUP: "Website", ADMIN: "Admin" };
 
 /** Organizations waiting for approval, with Approve / Reject right here. */

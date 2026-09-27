@@ -25,7 +25,7 @@ export function platformApi(client: ApiClient) {
     createTenant: (organization: RegisterRequest, keepInReview: boolean) =>
       client.post<TenantDetails>("/platform/tenants", { organization, keepInReview }),
     approve: (id: string) => client.post<TenantDetails>(`/platform/tenants/${id}/approve`),
-    reject: (id: string, reason?: string) => client.post<void>(`/platform/tenants/${id}/reject`, { reason }),
+    reject: (id: string, reason?: string) => client.post<TenantDetails>(`/platform/tenants/${id}/reject`, { reason }),
   };
 }
 

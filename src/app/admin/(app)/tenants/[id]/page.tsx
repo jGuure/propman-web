@@ -4,7 +4,7 @@ import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, ExportOutlined } from 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Card, Descriptions, Form, Input, Modal, Skeleton, Space } from "antd";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useReviewActions } from "@/components/admin/review-actions";
 import { PageHeader } from "@/components/PageHeader";
@@ -22,7 +22,6 @@ export default function TenantDetailsPage() {
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [form] = Form.useForm<{ reason: string }>();
   const tenant = useQuery({ queryKey: ["platform-tenant", id], queryFn: () => api.tenant(id) });
-  const router = useRouter();
 
   const onChanged = (updated: TenantDetails) => {
     queryClient.setQueryData(["platform-tenant", id], updated);
@@ -48,7 +47,7 @@ export default function TenantDetailsPage() {
 
   const review = useReviewActions({
     onApproved: (updated) => queryClient.setQueryData(["platform-tenant", id], updated),
-    onRejected: () => router.push("/tenants"),
+    onRejected: (updated) => queryClient.setQueryData(["platform-tenant", id], updated),
   });
 
   if (tenant.isPending) {
@@ -72,6 +71,9 @@ export default function TenantDetailsPage() {
                 <Button danger icon={<CloseOutlined />} disabled={review.busy} onClick={() => review.reject(t)}>Reject</Button>
               </>
             )}
+            {t.status === "REJECTED" && (
+              <Button type="primary" icon={<CheckOutlined />} disabled={review.busy} onClick={() => review.approve(t)}>Approve anyway</Button>
+            )}
             {t.status === "ACTIVE" && (
               <Button danger onClick={() => { form.resetFields(); setSuspendOpen(true); }}>Suspend</Button>
             )}
@@ -85,7 +87,11 @@ export default function TenantDetailsPage() {
         } />
       {t.status === "PENDING_REVIEW" && (
         <Alert type="info" showIcon style={{ marginBottom: 16 }} title="Waiting for review"
-          description={`${t.source === "ADMIN" ? "Created by an admin" : "Registered on the website"} on ${formatDateTime(t.createdAt)}. Nobody can sign in until you approve it; rejecting deletes it with everything in it.`} />
+          description={`${t.source === "ADMIN" ? "Created by an admin" : "Registered on the website"} on ${formatDateTime(t.createdAt)}. Nobody can sign in until you approve it; a rejected one stays on record.`} />
+      )}
+      {t.status === "REJECTED" && (
+        <Alert type="error" showIcon style={{ marginBottom: 16 }} title="Rejected"
+          description={`${t.rejectedReason ?? "No reason given"} — on ${formatDateTime(t.rejectedAt)}. Nobody can sign in; you can still approve it.`} />
       )}
       {t.status === "SUSPENDED" && (
         <Alert type="warning" showIcon style={{ marginBottom: 16 }} title="Suspended"

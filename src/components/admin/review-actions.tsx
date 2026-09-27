@@ -8,9 +8,9 @@ import { usePlatform } from "@/lib/auth/platform-context";
 
 type Target = Pick<TenantSummary, "id" | "name">;
 
-/** Approve or reject an organization waiting for review, each behind a confirmation. */
+/** Approve or reject an organization waiting for review (a rejected one can still be approved), each confirmed. */
 export function useReviewActions({ onApproved, onRejected }: {
-  onApproved?: (tenant: TenantDetails) => void; onRejected?: () => void;
+  onApproved?: (tenant: TenantDetails) => void; onRejected?: (tenant: TenantDetails) => void;
 } = {}) {
   const { api } = usePlatform();
   const { message, modal } = App.useApp();
@@ -28,10 +28,10 @@ export function useReviewActions({ onApproved, onRejected }: {
   });
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => api.reject(id, reason),
-    onSuccess: () => {
+    onSuccess: (tenant) => {
       refresh();
-      message.success("Registration deleted");
-      onRejected?.();
+      message.success(`${tenant.name} is rejected; it stays in the list`);
+      onRejected?.(tenant);
     },
     onError: (error) => message.error(errorMessage(error)),
   });
@@ -46,15 +46,15 @@ export function useReviewActions({ onApproved, onRejected }: {
   const reject = (tenant: Target) => {
     let reason = "";
     modal.confirm({
-      title: `Reject and delete ${tenant.name}?`,
+      title: `Reject ${tenant.name}?`,
       content: (
         <>
-          <p>The registration and everything in it are deleted for good. The web address becomes free again.</p>
-          <Input.TextArea rows={2} maxLength={255} placeholder="Reason (optional, for the audit log)"
+          <p>Nobody can sign in. It stays in the list as Rejected, and you can still approve it later.</p>
+          <Input.TextArea rows={2} maxLength={255} placeholder="Reason (optional, kept on record)"
             onChange={(e) => { reason = e.target.value; }} />
         </>
       ),
-      okText: "Reject and delete",
+      okText: "Reject",
       okButtonProps: { danger: true },
       onOk: () => rejectMutation.mutateAsync({ id: tenant.id, reason: reason.trim() || undefined }),
     });
