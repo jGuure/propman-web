@@ -17,7 +17,8 @@ export type Permission =
   | "leases:read"
   | "leases:manage"
   | "payments:read"
-  | "payments:manage";
+  | "payments:manage"
+  | "expenses:manage";
 
 export interface PageResponse<T> {
   content: T[];
@@ -590,6 +591,7 @@ export interface Enums {
   rentableRoomTypes: RoomType[];
   paymentMethods: PaymentMethod[];
   chargeStatuses: ChargeStatus[];
+  expenseCategories: ExpenseCategory[];
 }
 
 // ---------------------------------------------------------------- residents & leases (phase 2a)
@@ -850,4 +852,62 @@ export interface Receipt {
   covers: { period: string; amount: number; full: boolean }[];
   /** Part of the payment kept as credit for later months. */
   advance: number;
+}
+
+// ---------------------------------------------------------------- expenses
+
+export type ExpenseCategory =
+  | "REPAIR" | "PAINTING" | "CLEANING" | "ELECTRICITY" | "WATER" | "GENERATOR" | "SECURITY" | "SALARIES" | "OTHER";
+
+export interface Expense {
+  id: string;
+  property: { id: string; name: string };
+  building: { id: string; name: string } | null;
+  /** `name` is the apartment number. */
+  unit: { id: string; name: string } | null;
+  spentOn: string;
+  amount: number;
+  currency: string;
+  category: ExpenseCategory;
+  description: string;
+  paidTo: string | null;
+  method: PaymentMethod;
+  receiptUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExpenseRequest {
+  propertyId: string;
+  buildingId?: string | null;
+  unitId?: string | null;
+  spentOn: string;
+  amount: number;
+  category: ExpenseCategory;
+  description: string;
+  paidTo?: string | null;
+  method: PaymentMethod;
+}
+
+export interface ExpenseListParams {
+  /** Any day of the month to show. */
+  month?: string;
+  from?: string;
+  to?: string;
+  propertyId?: string;
+  buildingId?: string;
+  unitId?: string;
+  category?: ExpenseCategory;
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export interface ExpenseSummary {
+  from: string | null;
+  to: string | null;
+  total: number;
+  count: number;
+  byCategory: Record<ExpenseCategory, number>;
 }

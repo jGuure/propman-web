@@ -22,6 +22,9 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
   letterhead, months paid, credit kept, "Send on WhatsApp" to the resident's number); every lease has a printable
   rent statement with a running balance (`/print/statement/[leaseId]`). Print pages use the `(print)` route
   group: signed in, without menu; "Print / Save as PDF" uses the browser.
+- **Expenses**: an Expenses page per month (total, total per category, property / category filters, search),
+  add / edit / delete with an optional receipt photo, "Expenses this month" on the property panel and income −
+  expenses (net) on the dashboard.
 - **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
   and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
 
@@ -162,6 +165,7 @@ src/
                             residents (+ [id]), leases, users, settings/organization, settings/amenities, profile
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
+    expenses/               expense form
     payments/               rent collection: payment window, rent account drawer, account line
     leases/                 residents and leases: tenancy section, lease card, rent-out form, move-out, resident form
     portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,

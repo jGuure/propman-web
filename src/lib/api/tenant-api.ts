@@ -16,6 +16,10 @@ import type {
   PayChargeRequest,
   PaymentRecord,
   PaymentRequest,
+  Expense,
+  ExpenseListParams,
+  ExpenseRequest,
+  ExpenseSummary,
   Receipt,
   CreateLeaseRequest,
   EndLeaseRequest,
@@ -207,6 +211,17 @@ export function tenantApi(client: ApiClient) {
     clearUnpaidMark: (id: string) => client.delete<Charge>(`/charges/${id}/unpaid-mark`),
     recordPayment: (body: PaymentRequest) => client.post<LeaseAccount>("/payments", body),
     reversePayment: (id: string, reason: string) => client.post<LeaseAccount>(`/payments/${id}/reverse`, { reason }),
+    expenses: (params: ExpenseListParams) => client.get<PageResponse<Expense>>("/expenses", { ...params }),
+    expenseSummary: (params: ExpenseListParams) => client.get<ExpenseSummary>("/expenses/summary", { ...params }),
+    createExpense: (body: ExpenseRequest) => client.post<Expense>("/expenses", body),
+    updateExpense: (id: string, body: ExpenseRequest) => client.put<Expense>(`/expenses/${id}`, body),
+    deleteExpense: (id: string) => client.delete(`/expenses/${id}`),
+    uploadExpenseReceipt: (id: string, file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return client.post<Expense>(`/expenses/${id}/receipt`, form);
+    },
+    deleteExpenseReceipt: (id: string) => client.delete<Expense>(`/expenses/${id}/receipt`),
     paymentReceipt: (id: string) => client.get<Receipt>(`/payments/${id}/receipt`),
     leaseAccount: (leaseId: string) => client.get<LeaseAccount>(`/leases/${leaseId}/account`),
     collectionSummary: (period?: string, propertyId?: string) =>

@@ -3,6 +3,7 @@
 import { AppstoreOutlined, HomeOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, Col, Empty, Flex, Progress, Row, Skeleton, Statistic, Table, Typography } from "antd";
+import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -28,6 +29,12 @@ function DashboardPage() {
   const { canReadPayments } = usePortfolioPermissions();
   const rent = useQuery({
     queryKey: ["collection-summary", "dashboard"], queryFn: () => api.collectionSummary(), enabled: canReadPayments,
+  });
+  const { canManageExpenses } = usePortfolioPermissions();
+  const monthStart = dayjs().startOf("month").format("YYYY-MM-DD");
+  const spent = useQuery({
+    queryKey: ["expense-summary", { month: monthStart }], queryFn: () => api.expenseSummary({ month: monthStart }),
+    enabled: canManageExpenses,
   });
 
   if (!me) {
@@ -98,6 +105,20 @@ function DashboardPage() {
                       <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("collect.toCheck")}</Typography.Text>
                       <div style={{ fontWeight: 600 }}>{rent.data.needsCheck}</div>
                     </div>
+                    {spent.data && (
+                      <>
+                        <div>
+                          <Link href="/expenses"><Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("expenses.thisMonth")}</Typography.Text></Link>
+                          <div style={{ fontWeight: 600 }}>{formatMoney(spent.data.total)}</div>
+                        </div>
+                        <div>
+                          <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("expenses.net")}</Typography.Text>
+                          <div style={{ fontWeight: 600, color: rent.data.collected - spent.data.total < 0 ? "#cf1322" : "#16a34a" }}>
+                            {formatMoney(rent.data.collected - spent.data.total)}
+                          </div>
+                        </div>
+                      </>
+                    )}
                     <Link href={rent.data.needsCheck > 0 ? "/collect?filter=check" : "/collect"}>
                       <Button type="primary">{t("payments.goCollect")}</Button>
                     </Link>

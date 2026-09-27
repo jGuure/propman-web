@@ -3,6 +3,7 @@
 import { AppstoreAddOutlined, CameraOutlined, CopyOutlined, EditOutlined, EnvironmentOutlined, ExportOutlined, InboxOutlined, MoreOutlined, PlusOutlined, SwapOutlined, UndoOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Divider, Dropdown, Flex, Image, Modal, Progress, Skeleton, Space, Tag, Tooltip, Typography, type MenuProps } from "antd";
+import dayjs from "dayjs";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { errorMessage } from "@/lib/api/errors";
@@ -64,6 +65,13 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
     onSuccess: () => { message.success(t("explorer.sharedSaved")); invalidatePortfolio(queryClient); },
     onError: (error) => message.error(errorMessage(error)),
   });
+  const { canManageExpenses } = usePortfolioPermissions();
+  const monthStart = dayjs().startOf("month").format("YYYY-MM-DD");
+  const spent = useQuery({
+    queryKey: ["expense-summary", { month: monthStart, propertyId: p.id }],
+    queryFn: () => api.expenseSummary({ month: monthStart, propertyId: p.id }),
+    enabled: canManageExpenses,
+  });
   const mapUrl = p.latitude != null && p.longitude != null
     ? `https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}` : null;
   const flats = p.buildings.filter((b) => b.status === "ACTIVE");
@@ -98,6 +106,13 @@ export function PropertyInspector({ property: p, editable, onSelectFlat }: {
               </button>
             ))}
           </Flex>
+        </Block>
+      )}
+      {canManageExpenses && spent.data && (
+        <Block title={t("expenses.thisMonth")}
+          extra={<Link href={`/expenses?propertyId=${p.id}`} style={{ fontSize: 13 }}>{t("expenses.seeAll")}</Link>}>
+          <Typography.Text strong style={{ fontSize: 16 }}>{formatMoney(spent.data.total)}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}> · {tn("expenses.count", spent.data.count)}</Typography.Text>
         </Block>
       )}
       <Block title={t("explorer.sharedByEveryone")}>
