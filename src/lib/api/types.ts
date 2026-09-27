@@ -133,9 +133,8 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
+  /** website sign-ups always wait for a platform admin's approval (PENDING_REVIEW) */
   tenant: TenantRef & { url: string; status: TenantStatus };
-  /** null while the organization waits for approval */
-  auth: AuthResponse | null;
 }
 
 export interface UpdateOrganizationRequest {
@@ -192,11 +191,6 @@ export interface TenantDetails extends TenantSummary {
   suspendedAt: string | null;
   updatedAt: string;
   url: string;
-}
-
-export interface PlatformSettings {
-  /** true: website sign-ups wait for approval; false: accepted automatically */
-  signupReview: boolean;
 }
 
 export interface TenantListParams {

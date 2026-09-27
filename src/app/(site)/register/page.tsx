@@ -12,7 +12,6 @@ import { publicApi } from "@/lib/api/public-api";
 import type { RegisterRequest } from "@/lib/api/types";
 import { tenantHostSuffix } from "@/lib/config";
 import { applyFieldErrors, confirmPasswordRule, passwordRules, suggestSlug } from "@/lib/forms";
-import { navigateToOrigin } from "@/lib/navigation";
 import { countryOptions } from "@/lib/reference-data";
 
 type RegisterForm = RegisterRequest & { confirm: string };
@@ -56,13 +55,6 @@ export default function RegisterPage() {
   });
   const register = useMutation({
     mutationFn: (values: RegisterForm) => publicApi.register(toRequest(values)),
-    onSuccess: ({ tenant, auth }) => {
-      // waiting for approval: the page shows the "we are reviewing it" message instead
-      if (auth) {
-        // hand the new session to the tenant subdomain; the fragment never reaches a server
-        navigateToOrigin(`${tenant.url}/welcome#token=${encodeURIComponent(auth.refreshToken)}`);
-      }
-    },
     onError: (error) => applyFieldErrors(form, error),
   });
 
@@ -77,7 +69,8 @@ export default function RegisterPage() {
     slugHelp = <Typography.Text type="danger"><CloseCircleFilled /> {status.reason === "INVALID_FORMAT" || status.reason === "RESERVED" || status.reason === "TAKEN" ? t(`register.reason${status.reason}`) : status.reason}</Typography.Text>;
   }
 
-  if (register.data && !register.data.auth) {
+  // registered: it waits for a platform admin's approval
+  if (register.data) {
     const { tenant } = register.data;
     return (
       <AuthCard title={t("register.title")} width={640}>

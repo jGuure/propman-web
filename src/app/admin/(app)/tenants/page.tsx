@@ -1,8 +1,8 @@
 "use client";
 
 import { CheckOutlined, CloseOutlined, PlusOutlined } from "@ant-design/icons";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Flex, Input, Segmented, Select, Table, Tag, Typography, type TableProps } from "antd";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Button, Card, Flex, Input, Select, Table, Tag, Typography, type TableProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { CreateTenantDrawer } from "@/components/admin/CreateTenantDrawer";
@@ -16,40 +16,6 @@ import { formatDate, formatDateTime } from "@/lib/format";
 
 const STATUSES: TenantStatus[] = ["PENDING_REVIEW", "ACTIVE", "SUSPENDED", "PROVISIONING", "FAILED"];
 const SOURCE_LABELS: Record<TenantSource, string> = { SIGNUP: "Website", ADMIN: "Admin" };
-
-/** Whether website sign-ups are accepted automatically or wait for review. */
-function SignupSetting() {
-  const { api } = usePlatform();
-  const { message } = App.useApp();
-  const queryClient = useQueryClient();
-  const settings = useQuery({ queryKey: ["platform-settings"], queryFn: api.settings });
-  const update = useMutation({
-    mutationFn: (signupReview: boolean) => api.updateSettings({ signupReview }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["platform-settings"], saved);
-      message.success(saved.signupReview ? "New sign-ups will wait for your review" : "New sign-ups are accepted automatically");
-    },
-    onError: (error) => message.error(errorMessage(error)),
-  });
-
-  return (
-    <Card size="small" style={{ marginBottom: 16 }}>
-      <Flex justify="space-between" align="center" gap={12} wrap>
-        <div>
-          <Typography.Text strong>New sign-ups from the website</Typography.Text>
-          <Typography.Text type="secondary" style={{ display: "block", fontSize: 13 }}>
-            {settings.data?.signupReview === false
-              ? "Companies can sign in right after registering."
-              : "Companies wait until you approve them; they get an email when you do."}
-          </Typography.Text>
-        </div>
-        <Segmented disabled={!settings.data || update.isPending} value={settings.data?.signupReview ?? true}
-          onChange={(value) => update.mutate(value)}
-          options={[{ value: true, label: "Keep in review" }, { value: false, label: "Accept automatically" }]} />
-      </Flex>
-    </Card>
-  );
-}
 
 /** Organizations waiting for approval, with Approve / Reject right here. */
 function ReviewQueue() {
@@ -119,7 +85,6 @@ export default function TenantsPage() {
     <>
       <PageHeader title="Tenants" description="Companies registered on PropManagement."
         extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>New organization</Button>} />
-      <SignupSetting />
       <ReviewQueue />
       <Card>
         <Flex gap={12} wrap style={{ marginBottom: 16 }}>
