@@ -778,6 +778,8 @@ export interface Charge {
 
 export interface PaymentRecord {
   id: string;
+  /** e.g. "R-000123". */
+  receiptNumber: string;
   leaseId: string;
   amount: number;
   currency: string;
@@ -839,4 +841,13 @@ export interface PayChargeRequest {
   method: PaymentMethod;
   reference?: string | null;
   note?: string | null;
+}
+
+export interface Receipt {
+  payment: PaymentRecord;
+  lease: Lease;
+  /** Months this payment paid (payments count in the order they were made, oldest bills first). */
+  covers: { period: string; amount: number; full: boolean }[];
+  /** Part of the payment kept as credit for later months. */
+  advance: number;
 }

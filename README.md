@@ -18,6 +18,10 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
   one-tap *Paid* with EVC Plus, Zaad, eDahab, cash or bank, other amounts, *Not paid* for the month-end check), a
   rent account per lease (bills, payments, reverse a mistake), "Owes $x" / "Paid until …" on every lease card and a
   rent card on the dashboard. API: `ilsoftware-propman-api/README.md` ("Rent collection").
+- **Receipts**: every payment has a receipt number (`R-000123`) and a printable receipt (`/print/receipt/[id]`:
+  letterhead, months paid, credit kept, "Send on WhatsApp" to the resident's number); every lease has a printable
+  rent statement with a running balance (`/print/statement/[leaseId]`). Print pages use the `(print)` route
+  group: signed in, without menu; "Print / Save as PDF" uses the browser.
 - **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
   and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
 

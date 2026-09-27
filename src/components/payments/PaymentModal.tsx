@@ -1,5 +1,6 @@
 "use client";
 
+import { FileTextOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, DatePicker, Flex, Form, Input, InputNumber, Modal, Radio } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
@@ -39,7 +40,7 @@ export function PaymentModal({ open, target, charge, onClose }: {
 }) {
   const { api } = useTenant();
   const { t, tn } = useT();
-  const { message } = App.useApp();
+  const { message, notification } = App.useApp();
   const queryClient = useQueryClient();
   const [form] = Form.useForm<PaymentForm>();
 
@@ -58,8 +59,17 @@ export function PaymentModal({ open, target, charge, onClose }: {
       const common = { method: v.method, paidOn: isoDate(v.paidOn), reference: v.reference, note: v.note };
       return charge ? api.payCharge(charge.id, common) : api.recordPayment({ leaseId: target.leaseId, amount: v.amount!, ...common });
     },
-    onSuccess: (_, v) => {
-      message.success(t("payments.recorded", { amount: formatMoney(charge ? charge.remaining : v.amount) }));
+    onSuccess: (account, v) => {
+      const newest = [...account.payments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      notification.success({
+        title: t("payments.recorded", { amount: formatMoney(charge ? charge.remaining : v.amount) }),
+        description: newest && (
+          <a href={`/print/receipt/${newest.id}`} target="_blank" rel="noreferrer">
+            <Button size="small" icon={<FileTextOutlined />}>{t("receipts.viewReceipt")} {newest.receiptNumber}</Button>
+          </a>
+        ),
+        placement: "bottomRight",
+      });
       invalidatePortfolio(queryClient);
       onClose();
     },

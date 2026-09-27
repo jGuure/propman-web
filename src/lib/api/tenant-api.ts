@@ -16,6 +16,7 @@ import type {
   PayChargeRequest,
   PaymentRecord,
   PaymentRequest,
+  Receipt,
   CreateLeaseRequest,
   EndLeaseRequest,
   Lease,
@@ -206,6 +207,7 @@ export function tenantApi(client: ApiClient) {
     clearUnpaidMark: (id: string) => client.delete<Charge>(`/charges/${id}/unpaid-mark`),
     recordPayment: (body: PaymentRequest) => client.post<LeaseAccount>("/payments", body),
     reversePayment: (id: string, reason: string) => client.post<LeaseAccount>(`/payments/${id}/reverse`, { reason }),
+    paymentReceipt: (id: string) => client.get<Receipt>(`/payments/${id}/receipt`),
     leaseAccount: (leaseId: string) => client.get<LeaseAccount>(`/leases/${leaseId}/account`),
     collectionSummary: (period?: string, propertyId?: string) =>
       client.get<CollectionSummary>("/collections/summary", { period, propertyId }),

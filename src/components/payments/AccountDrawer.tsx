@@ -1,6 +1,6 @@
 "use client";
 
-import { UndoOutlined } from "@ant-design/icons";
+import { FileTextOutlined, UndoOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Drawer, Empty, Flex, Form, Input, Modal, Skeleton, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
@@ -43,7 +43,12 @@ export function AccountDrawer({ leaseId, residentName, monthlyRent, open, onClos
   const a = account.data;
   return (
     <Drawer open={open} onClose={onClose} size={620} destroyOnHidden title={t("payments.accountOf", { name: residentName })}
-      extra={canManagePayments && <Button type="primary" onClick={() => setPayOpen(true)}>{t("payments.record")}</Button>}>
+      extra={
+        <Flex gap={8}>
+          <a href={`/print/statement/${leaseId}`} target="_blank" rel="noreferrer"><Button icon={<FileTextOutlined />}>{t("receipts.statement")}</Button></a>
+          {canManagePayments && <Button type="primary" onClick={() => setPayOpen(true)}>{t("payments.record")}</Button>}
+        </Flex>
+      }>
       {account.isPending && <Skeleton active />}
       {account.error && <Alert type="error" showIcon title={errorMessage(account.error)} />}
       {a && (
@@ -67,6 +72,7 @@ export function AccountDrawer({ leaseId, residentName, monthlyRent, open, onClos
                 style={{ padding: "8px 12px", border: "1px solid #eef0f0", borderRadius: 8, opacity: p.reversed ? 0.6 : 1 }}>
                 <div style={{ minWidth: 0 }}>
                   <Typography.Text strong delete={p.reversed}>{formatMoney(p.amount)}</Typography.Text>{" "}
+                  <a href={`/print/receipt/${p.id}`} target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>{p.receiptNumber}</a>
                   <Tag style={{ marginInlineStart: 6 }}>{t(`paymentMethod.${p.method}`)}</Tag>
                   {p.reversed && <Tag color="red">{t("payments.reversed")}</Tag>}
                   <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
