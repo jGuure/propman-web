@@ -71,9 +71,6 @@ export default function TenantDetailsPage() {
                 <Button danger icon={<CloseOutlined />} disabled={review.busy} onClick={() => review.reject(t)}>Reject</Button>
               </>
             )}
-            {t.status === "REJECTED" && (
-              <Button type="primary" icon={<CheckOutlined />} disabled={review.busy} onClick={() => review.approve(t)}>Approve anyway</Button>
-            )}
             {t.status === "ACTIVE" && (
               <Button danger onClick={() => { form.resetFields(); setSuspendOpen(true); }}>Suspend</Button>
             )}
@@ -87,11 +84,11 @@ export default function TenantDetailsPage() {
         } />
       {t.status === "PENDING_REVIEW" && (
         <Alert type="info" showIcon style={{ marginBottom: 16 }} title="Waiting for review"
-          description={`${t.source === "ADMIN" ? "Created by an admin" : "Registered on the website"} on ${formatDateTime(t.createdAt)}. Nobody can sign in until you approve it; a rejected one stays on record.`} />
+          description={`${t.source === "ADMIN" ? "Created by an admin" : "Registered on the website"} on ${formatDateTime(t.createdAt)}. Nobody can sign in until you approve it. Rejecting is final; the record is kept.`} />
       )}
       {t.status === "REJECTED" && (
         <Alert type="error" showIcon style={{ marginBottom: 16 }} title="Rejected"
-          description={`${t.rejectedReason ?? "No reason given"} — on ${formatDateTime(t.rejectedAt)}. Nobody can sign in; you can still approve it.`} />
+          description={`${t.rejectedReason ?? "No reason given"} — on ${formatDateTime(t.rejectedAt)}. Rejection is final: nobody can sign in and it cannot be approved.`} />
       )}
       {t.status === "SUSPENDED" && (
         <Alert type="warning" showIcon style={{ marginBottom: 16 }} title="Suspended"

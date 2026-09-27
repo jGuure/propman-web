@@ -8,7 +8,7 @@ import { usePlatform } from "@/lib/auth/platform-context";
 
 type Target = Pick<TenantSummary, "id" | "name">;
 
-/** Approve or reject an organization waiting for review (a rejected one can still be approved), each confirmed. */
+/** Approve or reject an organization waiting for review, each confirmed; rejecting is final. */
 export function useReviewActions({ onApproved, onRejected }: {
   onApproved?: (tenant: TenantDetails) => void; onRejected?: (tenant: TenantDetails) => void;
 } = {}) {
@@ -30,7 +30,7 @@ export function useReviewActions({ onApproved, onRejected }: {
     mutationFn: ({ id, reason }: { id: string; reason?: string }) => api.reject(id, reason),
     onSuccess: (tenant) => {
       refresh();
-      message.success(`${tenant.name} is rejected; it stays in the list`);
+      message.success(`${tenant.name} is rejected`);
       onRejected?.(tenant);
     },
     onError: (error) => message.error(errorMessage(error)),
@@ -49,12 +49,12 @@ export function useReviewActions({ onApproved, onRejected }: {
       title: `Reject ${tenant.name}?`,
       content: (
         <>
-          <p>Nobody can sign in. It stays in the list as Rejected, and you can still approve it later.</p>
+          <p>This is final: it can never be approved or activated afterwards. It stays in the list as Rejected.</p>
           <Input.TextArea rows={2} maxLength={255} placeholder="Reason (optional, kept on record)"
             onChange={(e) => { reason = e.target.value; }} />
         </>
       ),
-      okText: "Reject",
+      okText: "Reject for good",
       okButtonProps: { danger: true },
       onOk: () => rejectMutation.mutateAsync({ id: tenant.id, reason: reason.trim() || undefined }),
     });
