@@ -20,8 +20,8 @@ export function whatsappNumber(phone: string): string | null {
 }
 
 /** A sheet of paper with the organization's letterhead; the toolbar is not printed. */
-export function PrintFrame({ title, number, whatsapp, children }: {
-  title: string; number?: string; whatsapp?: { phone: string; text: string }; children: ReactNode;
+export function PrintFrame({ title, number, subtitle, whatsapp, children }: {
+  title: string; number?: string; subtitle?: ReactNode; whatsapp?: { phone: string; text: string }; children: ReactNode;
 }) {
   const { api } = useTenant();
   const { t } = useT();
@@ -31,9 +31,16 @@ export function PrintFrame({ title, number, whatsapp, children }: {
   const waHref = whatsapp ? `https://wa.me/${waNumber ?? ""}?text=${encodeURIComponent(whatsapp.text)}` : undefined;
 
   return (
-    <div style={{ padding: "24px 16px" }}>
-      <style>{`@media print { .no-print { display: none !important; } body, .print-bg { background: #fff !important; }
-        .paper { box-shadow: none !important; margin: 0 !important; max-width: none !important; } @page { margin: 14mm; } }`}</style>
+    <div className="print-wrap" style={{ padding: "24px 16px" }}>
+      <style>{`* { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { size: A4; margin: 12mm 0; }
+        @media print {
+          .no-print { display: none !important; }
+          html, body, .print-bg { background: #fff !important; min-height: 0 !important; }
+          .print-wrap { padding: 0 !important; }
+          .paper { box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; padding: 0 14mm !important; }
+          tr { break-inside: avoid; } thead { display: table-header-group; }
+        }`}</style>
       <Flex className="no-print" justify="center" gap={8} wrap style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>{t("receipts.print")}</Button>
         {waHref && (
@@ -43,8 +50,9 @@ export function PrintFrame({ title, number, whatsapp, children }: {
         )}
       </Flex>
       <div className="paper" style={{
-        maxWidth: 760, margin: "0 auto", background: "#fff", padding: "36px 40px", borderRadius: 8,
-        boxShadow: "0 1px 4px rgba(0,0,0,.08)",
+        // an A4 sheet at real size, so the screen shows exactly what prints (same width and side margins)
+        width: "210mm", maxWidth: "100%", boxSizing: "border-box", margin: "0 auto", background: "#fff",
+        padding: "12mm 14mm", borderRadius: 4, boxShadow: "0 1px 4px rgba(0,0,0,.12)",
       }}>
         <Flex justify="space-between" align="start" gap={16} style={{ borderBottom: "2px solid #0f766e", paddingBottom: 16, marginBottom: 20 }}>
           <Flex gap={12} align="center">
@@ -61,6 +69,7 @@ export function PrintFrame({ title, number, whatsapp, children }: {
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: "#0f766e", textTransform: "uppercase", letterSpacing: 1 }}>{title}</div>
             {number && <div style={{ fontSize: 13, color: "#555" }}>{t("receipts.receiptNo", { number })}</div>}
+            {subtitle && <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>{subtitle}</div>}
           </div>
         </Flex>
         {children}

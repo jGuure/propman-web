@@ -25,6 +25,9 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
 - **Expenses**: an Expenses page per month (total, total per category, property / category filters, search),
   add / edit / delete with an optional receipt photo, "Expenses this month" on the property panel and income −
   expenses (net) on the dashboard.
+- **Reports** (`/reports`): income & expenses per month (rent billed, received, expenses, net; chart and tables,
+  per property), late payers (owed, unpaid months, days overdue, last payment, call / WhatsApp) and occupancy per
+  property (rent roll vs potential rent); each exports to Excel (CSV) and prints.
 - **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
   and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
 

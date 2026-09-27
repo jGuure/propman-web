@@ -19,5 +19,5 @@ export default function PrintLayout({ children }: LayoutProps<"/tenant">) {
   if (!ready || !isAuthenticated) {
     return <FullPageSpinner />;
   }
-  return <div style={{ minHeight: "100vh", background: "#f3f5f5" }}>{children}</div>;
+  return <div className="print-bg" style={{ minHeight: "100vh", background: "#f3f5f5" }}>{children}</div>;
 }

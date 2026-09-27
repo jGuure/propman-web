@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeftOutlined, ExportOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, CheckOutlined, CloseOutlined, ExportOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Card, Descriptions, Form, Input, Modal, Skeleton, Space } from "antd";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { useReviewActions } from "@/components/admin/review-actions";
 import { PageHeader } from "@/components/PageHeader";
 import { TenantStatusTag } from "@/components/tags";
 import { errorMessage } from "@/lib/api/errors";
@@ -44,6 +45,11 @@ export default function TenantDetailsPage() {
     onError: (error) => message.error(errorMessage(error)),
   });
 
+  const review = useReviewActions({
+    onApproved: (updated) => queryClient.setQueryData(["platform-tenant", id], updated),
+    onRejected: (updated) => queryClient.setQueryData(["platform-tenant", id], updated),
+  });
+
   if (tenant.isPending) {
     return <Card><Skeleton active /></Card>;
   }
@@ -59,6 +65,12 @@ export default function TenantDetailsPage() {
         extra={
           <Space wrap>
             <Button icon={<ExportOutlined />} href={t.url} target="_blank">Open</Button>
+            {t.status === "PENDING_REVIEW" && (
+              <>
+                <Button type="primary" icon={<CheckOutlined />} disabled={review.busy} onClick={() => review.approve(t)}>Approve</Button>
+                <Button danger icon={<CloseOutlined />} disabled={review.busy} onClick={() => review.reject(t)}>Reject</Button>
+              </>
+            )}
             {t.status === "ACTIVE" && (
               <Button danger onClick={() => { form.resetFields(); setSuspendOpen(true); }}>Suspend</Button>
             )}
@@ -70,6 +82,14 @@ export default function TenantDetailsPage() {
             )}
           </Space>
         } />
+      {t.status === "PENDING_REVIEW" && (
+        <Alert type="info" showIcon style={{ marginBottom: 16 }} title="Waiting for review"
+          description={`${t.source === "ADMIN" ? "Created by an admin" : "Registered on the website"} on ${formatDateTime(t.createdAt)}. Nobody can sign in until you approve it. Rejecting is final; the record is kept.`} />
+      )}
+      {t.status === "REJECTED" && (
+        <Alert type="error" showIcon style={{ marginBottom: 16 }} title="Rejected"
+          description={`${t.rejectedReason ?? "No reason given"} — on ${formatDateTime(t.rejectedAt)}. Rejection is final: nobody can sign in and it cannot be approved.`} />
+      )}
       {t.status === "SUSPENDED" && (
         <Alert type="warning" showIcon style={{ marginBottom: 16 }} title="Suspended"
           description={`${t.suspendedReason ?? "No reason given"} — since ${formatDateTime(t.suspendedAt)}`} />
@@ -81,6 +101,7 @@ export default function TenantDetailsPage() {
           <Descriptions.Item label="Email">{t.email}</Descriptions.Item>
           <Descriptions.Item label="Phone">{t.phone ?? "—"}</Descriptions.Item>
           <Descriptions.Item label="Country">{t.country}</Descriptions.Item>
+          <Descriptions.Item label="Added by">{t.source === "ADMIN" ? "Platform admin" : "Website sign-up"}</Descriptions.Item>
           <Descriptions.Item label="Users">{t.userCount ?? "—"}</Descriptions.Item>
           <Descriptions.Item label="Database schema">{t.schemaName}</Descriptions.Item>
           <Descriptions.Item label="Registered">{formatDateTime(t.createdAt)}</Descriptions.Item>

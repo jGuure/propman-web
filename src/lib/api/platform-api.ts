@@ -1,6 +1,7 @@
 import type { ApiClient } from "./client";
 import type {
   PageResponse,
+  RegisterRequest,
   PlatformAdmin,
   PlatformAuthResponse,
   TenantDetails,
@@ -21,6 +22,10 @@ export function platformApi(client: ApiClient) {
     suspend: (id: string, reason: string) =>
       client.post<TenantDetails>(`/platform/tenants/${id}/suspend`, { reason }),
     activate: (id: string) => client.post<TenantDetails>(`/platform/tenants/${id}/activate`),
+    createTenant: (organization: RegisterRequest, keepInReview: boolean) =>
+      client.post<TenantDetails>("/platform/tenants", { organization, keepInReview }),
+    approve: (id: string) => client.post<TenantDetails>(`/platform/tenants/${id}/approve`),
+    reject: (id: string, reason?: string) => client.post<TenantDetails>(`/platform/tenants/${id}/reject`, { reason }),
   };
 }
 

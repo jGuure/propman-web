@@ -6,6 +6,7 @@ import { Alert, App, Button, Drawer, Empty, Flex, Form, Input, Modal, Skeleton, 
 import dayjs from "dayjs";
 import { useState } from "react";
 import { invalidatePortfolio } from "@/components/portfolio/invalidate";
+import { openPrintPreview, PrintLink } from "@/components/payments/PrintPreview";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { Charge, PaymentRecord } from "@/lib/api/types";
@@ -45,7 +46,7 @@ export function AccountDrawer({ leaseId, residentName, monthlyRent, open, onClos
     <Drawer open={open} onClose={onClose} size={620} destroyOnHidden title={t("payments.accountOf", { name: residentName })}
       extra={
         <Flex gap={8}>
-          <a href={`/print/statement/${leaseId}`} target="_blank" rel="noreferrer"><Button icon={<FileTextOutlined />}>{t("receipts.statement")}</Button></a>
+          <Button icon={<FileTextOutlined />} onClick={() => openPrintPreview(`/print/statement/${leaseId}`)}>{t("receipts.statement")}</Button>
           {canManagePayments && <Button type="primary" onClick={() => setPayOpen(true)}>{t("payments.record")}</Button>}
         </Flex>
       }>
@@ -72,7 +73,7 @@ export function AccountDrawer({ leaseId, residentName, monthlyRent, open, onClos
                 style={{ padding: "8px 12px", border: "1px solid #eef0f0", borderRadius: 8, opacity: p.reversed ? 0.6 : 1 }}>
                 <div style={{ minWidth: 0 }}>
                   <Typography.Text strong delete={p.reversed}>{formatMoney(p.amount)}</Typography.Text>{" "}
-                  <a href={`/print/receipt/${p.id}`} target="_blank" rel="noreferrer" style={{ fontSize: 12 }}>{p.receiptNumber}</a>
+                  <PrintLink href={`/print/receipt/${p.id}`} style={{ fontSize: 12 }}>{p.receiptNumber}</PrintLink>
                   <Tag style={{ marginInlineStart: 6 }}>{t(`paymentMethod.${p.method}`)}</Tag>
                   {p.reversed && <Tag color="red">{t("payments.reversed")}</Tag>}
                   <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>

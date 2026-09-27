@@ -1,11 +1,12 @@
 "use client";
 
-import { DollarOutlined, EditOutlined, HomeOutlined, LoginOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, WalletOutlined } from "@ant-design/icons";
+import { DollarOutlined, EditOutlined, FileTextOutlined, HomeOutlined, LoginOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, UserOutlined, WalletOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Dropdown, Flex, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
+import { openPrintPreview } from "@/components/payments/PrintPreview";
 import type { Lease } from "@/lib/api/types";
 import { formatDate, formatMoney } from "@/lib/format";
 import { AccountDrawer } from "@/components/payments/AccountDrawer";
@@ -64,84 +65,69 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
     onError: (error) => message.error(errorMessage(error)),
   });
 
+  const canPay = canManagePayments && (lease.status === "ACTIVE" || lease.status === "ENDED");
   const more: MenuProps["items"] = [
-    ...(lease.deposit.status === "PENDING" ? [{
+    ...(canManage && open ? [{ key: "edit", icon: <EditOutlined />, label: t("common.edit"), onClick: () => setEditOpen(true) }] : []),
+    ...(canReadPayments && billed ? [
+      { key: "account", icon: <WalletOutlined />, label: t("payments.account"), onClick: () => setAccountOpen(true) },
+      {
+        key: "statement", icon: <FileTextOutlined />,
+        label: t("receipts.statement"), onClick: () => openPrintPreview(`/print/statement/${lease.id}`),
+      },
+    ] : []),
+    ...(canManage && lease.deposit.status === "PENDING" ? [{
       key: "deposit", icon: <WalletOutlined />, label: t("leases.markDepositReceived"), onClick: () => setDepositOpen(true),
     }] : []),
     ...(show === "resident" ? [{
-      key: "resident", label: <Link href={`/residents/${lease.resident.id}`}>{t("leases.viewResident")}</Link>,
+      key: "resident", icon: <UserOutlined />, label: <Link href={`/residents/${lease.resident.id}`}>{t("leases.viewResident")}</Link>,
     }] : []),
   ];
   const place = `${lease.unit.propertyName} · ${lease.unit.buildingName ? `${lease.unit.buildingName} · ` : ""}${lease.unit.unitNumber}`
     + (lease.room ? ` · ${lease.room.name}` : "");
+  const details = [
+    lease.occupants.length > 0 && `${tn("leases.household", lease.occupants.length)}: ${lease.occupants
+      .map((o) => (o.relationship ? `${o.fullName} (${o.relationship})` : o.fullName)).join(", ")}`,
+    includes,
+    lease.endReason,
+  ].filter(Boolean) as string[];
+  const hasActions = (canManage && open) || canPay || more.length > 0;
 
   return (
-    <div style={{ padding: "10px 12px", border: "1px solid #eef0f0", borderRadius: 10, background: "#fff" }}>
+    <div style={{ padding: "12px 14px", border: "1px solid #eef0f0", borderRadius: 10, background: "#fff" }}>
       <Flex justify="space-between" align="start" gap={8}>
-        <div style={{ minWidth: 0 }}>
-          {show === "resident" ? (
-            <Link href={`/residents/${lease.resident.id}`}>
-              <Typography.Text strong style={{ fontSize: 15 }}>{lease.resident.fullName}</Typography.Text>
-            </Link>
-          ) : (
-            <Link href={`/units/${lease.unit.id}`}>
-              <Typography.Text strong><HomeOutlined /> {place}</Typography.Text>
-            </Link>
-          )}
-          {show === "resident" && (
-            <div>
-              <a href={`tel:${lease.resident.phone.replace(/[^+\d]/g, "")}`} style={{ fontSize: 13 }}>
-                <PhoneOutlined /> {lease.resident.phone}
-              </a>
-            </div>
-          )}
-        </div>
-        <Flex gap={4} wrap justify="end">
-          <LeaseStatusTag status={lease.status} />
+        {show === "resident" ? (
+          <Link href={`/residents/${lease.resident.id}`} style={{ minWidth: 0 }}>
+            <Typography.Text strong style={{ fontSize: 15 }}>{lease.resident.fullName}</Typography.Text>
+          </Link>
+        ) : (
+          <Link href={`/units/${lease.unit.id}`} style={{ minWidth: 0 }}>
+            <Typography.Text strong style={{ fontSize: 15 }}><HomeOutlined /> {place}</Typography.Text>
+          </Link>
+        )}
+        <Flex gap={4} wrap justify="end" style={{ flexShrink: 0 }}>
           {lease.endingSoon && <EndingSoonTag />}
+          <LeaseStatusTag status={lease.status} />
         </Flex>
       </Flex>
-      {show === "resident" && lease.room && !hideRoom && (
-        <Typography.Text type="secondary" style={{ display: "block", fontSize: 13 }}>{lease.room.name}</Typography.Text>
-      )}
-      <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{period(lease)}</Typography.Text>
-      <Flex gap={8} align="center" wrap style={{ marginTop: 6 }}>
-        <Typography.Text strong>{formatMoney(lease.monthlyRent)}</Typography.Text>
+      <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 2 }}>
+        {show === "resident" && (
+          <><a href={`tel:${lease.resident.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {lease.resident.phone}</a> · </>
+        )}
+        {show === "resident" && lease.room && !hideRoom && <>{lease.room.name} · </>}
+        {period(lease)}
+      </Typography.Text>
+      <Flex gap={8} align="center" wrap style={{ marginTop: 8 }}>
+        <Typography.Text strong style={{ fontSize: 15 }}>{formatMoney(lease.monthlyRent)}</Typography.Text>
         <Typography.Text type="secondary" style={{ fontSize: 13 }}>/ {t("common.monthlyRent").toLowerCase()}</Typography.Text>
         {lease.deposit.status !== "NONE" && <DepositTag status={lease.deposit.status} />}
+        {canReadPayments && billed && <AccountLine account={lease.account} />}
       </Flex>
-      {includes && (
-        <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{includes}</Typography.Text>
-      )}
-      {canReadPayments && billed && (
-        <Flex justify="space-between" align="center" gap={8} wrap style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed #eef0f0" }}>
-          <AccountLine account={lease.account} />
-          <Flex gap={4}>
-            {canManagePayments && lease.status !== "CANCELLED" && (
-              <Button size="small" type="primary" ghost icon={<DollarOutlined />} onClick={() => setPayOpen(true)}>
-                {t("payments.record")}
-              </Button>
-            )}
-            <Button size="small" type="link" onClick={() => setAccountOpen(true)}>{t("collect.viewAccount")}</Button>
-          </Flex>
-        </Flex>
-      )}
-      {lease.occupants.length > 0 && (
-        <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>
-          {tn("leases.household", lease.occupants.length)}: {lease.occupants
-            .map((o) => (o.relationship ? `${o.fullName} (${o.relationship})` : o.fullName)).join(", ")}
-        </Typography.Text>
-      )}
-      {lease.endReason && (
-        <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{lease.endReason}</Typography.Text>
-      )}
-      {canManage && open && (
+      {details.map((d) => (
+        <Typography.Text key={d} type="secondary" style={{ display: "block", fontSize: 12, marginTop: 4 }}>{d}</Typography.Text>
+      ))}
+      {hasActions && (
         <Flex gap={6} wrap style={{ marginTop: 10 }}>
-          <Button size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>{t("common.edit")}</Button>
-          {lease.status === "ACTIVE" && (
-            <Button size="small" icon={<LogoutOutlined />} onClick={() => setEndMode("end")}>{t("leases.recordMoveOut")}</Button>
-          )}
-          {lease.status === "UPCOMING" && (
+          {canManage && lease.status === "UPCOMING" && (
             <>
               <Button size="small" type="primary" icon={<LoginOutlined />} loading={start.isPending} onClick={() => modal.confirm({
                 title: t("leases.moveInTitle", { name: lease.resident.fullName }), content: t("leases.moveInText"),
@@ -150,15 +136,18 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
               <Button size="small" danger icon={<StopOutlined />} onClick={() => setEndMode("cancel")}>{t("leases.cancelReservation")}</Button>
             </>
           )}
+          {canPay && (
+            <Button size="small" type="primary" icon={<DollarOutlined />} onClick={() => setPayOpen(true)}>{t("payments.record")}</Button>
+          )}
+          {canManage && lease.status === "ACTIVE" && (
+            <Button size="small" icon={<LogoutOutlined />} onClick={() => setEndMode("end")}>{t("leases.recordMoveOut")}</Button>
+          )}
           {more.length > 0 && (
             <Dropdown menu={{ items: more }} trigger={["click"]}>
               <Button size="small" icon={<MoreOutlined />} aria-label={t("common.actions")} />
             </Dropdown>
           )}
         </Flex>
-      )}
-      {!canManage && show === "resident" && (
-        <div style={{ marginTop: 6 }}><Link href={`/residents/${lease.resident.id}`} style={{ fontSize: 13 }}>{t("leases.viewResident")}</Link></div>
       )}
       <LeaseFormDrawer open={editOpen} lease={lease} onClose={() => setEditOpen(false)} />
       {endMode && <EndLeaseModal open lease={lease} mode={endMode} onClose={() => setEndMode(undefined)} />}

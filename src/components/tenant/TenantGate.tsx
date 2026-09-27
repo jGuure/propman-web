@@ -35,6 +35,14 @@ export function TenantGate({ children }: { children: ReactNode }) {
       <Result status="404" title={t("gate.notFoundTitle")}
         subTitle={t("gate.notFoundText")} extra={home} />
     );
+  } else if (isApiError(error, "TENANT_PENDING_REVIEW")) {
+    result = (
+      <Result status="info" title={t("gate.pendingTitle")} subTitle={t("gate.pendingText")} extra={home} />
+    );
+  } else if (isApiError(error, "TENANT_REJECTED")) {
+    result = (
+      <Result status="403" title={t("gate.rejectedTitle")} subTitle={t("gate.rejectedText")} extra={home} />
+    );
   } else if (isApiError(error, "TENANT_SUSPENDED")) {
     result = (
       <Result status="403" title={t("gate.suspendedTitle")}
