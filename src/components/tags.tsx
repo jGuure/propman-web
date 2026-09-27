@@ -21,6 +21,7 @@ const TENANT_STATUS_COLORS: Record<TenantStatus, string> = {
   ACTIVE: "green",
   SUSPENDED: "red",
   PROVISIONING: "blue",
+  PENDING_REVIEW: "gold",
   FAILED: "default",
 };
 
@@ -36,5 +37,6 @@ export function UserStatusTag({ status }: { status: UserStatus }) {
 
 /** Platform admin area (English only). */
 export function TenantStatusTag({ status }: { status: TenantStatus }) {
-  return <Tag color={TENANT_STATUS_COLORS[status]}>{status.charAt(0) + status.slice(1).toLowerCase()}</Tag>;
+  const label = status === "PENDING_REVIEW" ? "Waiting for review" : status.charAt(0) + status.slice(1).toLowerCase();
+  return <Tag color={TENANT_STATUS_COLORS[status]}>{label}</Tag>;
 }

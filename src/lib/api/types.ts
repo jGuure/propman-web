@@ -1,6 +1,8 @@
 export type UserRole = "OWNER" | "MANAGER" | "ACCOUNTANT" | "STAFF";
 export type UserStatus = "ACTIVE" | "INVITED" | "DISABLED";
-export type TenantStatus = "PROVISIONING" | "ACTIVE" | "SUSPENDED" | "FAILED";
+export type TenantStatus = "PROVISIONING" | "PENDING_REVIEW" | "ACTIVE" | "SUSPENDED" | "FAILED";
+/** Who created the organization: the company on the website, or a platform admin. */
+export type TenantSource = "SIGNUP" | "ADMIN";
 
 export type Permission =
   | "organization:read"
@@ -131,8 +133,9 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
-  tenant: TenantRef & { url: string };
-  auth: AuthResponse;
+  tenant: TenantRef & { url: string; status: TenantStatus };
+  /** null while the organization waits for approval */
+  auth: AuthResponse | null;
 }
 
 export interface UpdateOrganizationRequest {
@@ -174,6 +177,7 @@ export interface TenantSummary {
   name: string;
   slug: string;
   status: TenantStatus;
+  source: TenantSource;
   email: string;
   createdAt: string;
   userCount: number | null;
@@ -188,6 +192,11 @@ export interface TenantDetails extends TenantSummary {
   suspendedAt: string | null;
   updatedAt: string;
   url: string;
+}
+
+export interface PlatformSettings {
+  /** true: website sign-ups wait for approval; false: accepted automatically */
+  signupReview: boolean;
 }
 
 export interface TenantListParams {

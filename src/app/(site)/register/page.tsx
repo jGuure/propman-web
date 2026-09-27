@@ -2,7 +2,7 @@
 
 import { CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Alert, Button, Col, Divider, Form, Input, Row, Select, Space, Typography } from "antd";
+import { Alert, Button, Col, Divider, Form, Input, Result, Row, Select, Space, Typography } from "antd";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AuthCard } from "@/components/AuthCard";
@@ -57,8 +57,11 @@ export default function RegisterPage() {
   const register = useMutation({
     mutationFn: (values: RegisterForm) => publicApi.register(toRequest(values)),
     onSuccess: ({ tenant, auth }) => {
-      // hand the new session to the tenant subdomain; the fragment never reaches a server
-      navigateToOrigin(`${tenant.url}/welcome#token=${encodeURIComponent(auth.refreshToken)}`);
+      // waiting for approval: the page shows the "we are reviewing it" message instead
+      if (auth) {
+        // hand the new session to the tenant subdomain; the fragment never reaches a server
+        navigateToOrigin(`${tenant.url}/welcome#token=${encodeURIComponent(auth.refreshToken)}`);
+      }
     },
     onError: (error) => applyFieldErrors(form, error),
   });
@@ -72,6 +75,19 @@ export default function RegisterPage() {
     slugHelp = <Typography.Text type="success"><CheckCircleFilled /> {t("register.available")}</Typography.Text>;
   } else if (status?.reason) {
     slugHelp = <Typography.Text type="danger"><CloseCircleFilled /> {status.reason === "INVALID_FORMAT" || status.reason === "RESERVED" || status.reason === "TAKEN" ? t(`register.reason${status.reason}`) : status.reason}</Typography.Text>;
+  }
+
+  if (register.data && !register.data.auth) {
+    const { tenant } = register.data;
+    return (
+      <AuthCard title={t("register.title")} width={640}>
+        <Result status="success" title={t("register.reviewTitle", { name: tenant.name })}
+          subTitle={t("register.reviewText", {
+            email: register.variables.ownerEmail, url: tenant.url.replace(/^https?:\/\//, ""),
+          })}
+          extra={<Link href="/"><Button type="primary">{t("gate.goHome")}</Button></Link>} />
+      </AuthCard>
+    );
   }
 
   return (
