@@ -27,6 +27,8 @@ export function usePortfolioPermissions() {
     canManageResidents: permissions.includes("residents:manage"),
     canReadLeases: permissions.includes("leases:read"),
     canManageLeases: permissions.includes("leases:manage"),
+    canReadPayments: permissions.includes("payments:read"),
+    canManagePayments: permissions.includes("payments:manage"),
     organizationCurrency: data?.organization.currency ?? "USD",
   };
 }

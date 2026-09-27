@@ -1,12 +1,16 @@
 "use client";
 
-import { EditOutlined, HomeOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, WalletOutlined } from "@ant-design/icons";
+import { DollarOutlined, EditOutlined, HomeOutlined, LogoutOutlined, MoreOutlined, PhoneOutlined, StopOutlined, WalletOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Flex, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
 import type { Lease } from "@/lib/api/types";
 import { formatDate, formatMoney } from "@/lib/format";
+import { AccountDrawer } from "@/components/payments/AccountDrawer";
+import { AccountLine } from "@/components/payments/AccountLine";
+import { PaymentModal } from "@/components/payments/PaymentModal";
+import { usePortfolioPermissions } from "@/lib/portfolio-hooks";
 import { DepositReceivedModal } from "./DepositReceivedModal";
 import { EndLeaseModal } from "./EndLeaseModal";
 import { LeaseFormDrawer } from "./LeaseFormDrawer";
@@ -38,6 +42,11 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
   const [editOpen, setEditOpen] = useState(false);
   const [endMode, setEndMode] = useState<"end" | "cancel">();
   const [depositOpen, setDepositOpen] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const { canReadPayments, canManagePayments } = usePortfolioPermissions();
+  // upcoming leases have no bills yet, unless someone paid in advance
+  const billed = (lease.status === "ACTIVE" || lease.status === "ENDED") || lease.account.credit > 0;
   const open = lease.status === "ACTIVE" || lease.status === "UPCOMING";
 
   const more: MenuProps["items"] = [
@@ -92,6 +101,19 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
       {includes && (
         <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>{includes}</Typography.Text>
       )}
+      {canReadPayments && billed && (
+        <Flex justify="space-between" align="center" gap={8} wrap style={{ marginTop: 8, paddingTop: 8, borderTop: "1px dashed #eef0f0" }}>
+          <AccountLine account={lease.account} />
+          <Flex gap={4}>
+            {canManagePayments && lease.status !== "CANCELLED" && (
+              <Button size="small" type="primary" ghost icon={<DollarOutlined />} onClick={() => setPayOpen(true)}>
+                {t("payments.record")}
+              </Button>
+            )}
+            <Button size="small" type="link" onClick={() => setAccountOpen(true)}>{t("collect.viewAccount")}</Button>
+          </Flex>
+        </Flex>
+      )}
       {lease.occupants.length > 0 && (
         <Typography.Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>
           {tn("leases.household", lease.occupants.length)}: {lease.occupants
@@ -120,6 +142,15 @@ export function LeaseCard({ lease, show, canManage, hideRoom = false, includes }
       <LeaseFormDrawer open={editOpen} lease={lease} onClose={() => setEditOpen(false)} />
       {endMode && <EndLeaseModal open lease={lease} mode={endMode} onClose={() => setEndMode(undefined)} />}
       {depositOpen && <DepositReceivedModal open lease={lease} onClose={() => setDepositOpen(false)} />}
+      {payOpen && (
+        <PaymentModal open onClose={() => setPayOpen(false)} target={{
+          leaseId: lease.id, residentName: lease.resident.fullName, monthlyRent: lease.monthlyRent, owed: lease.account.owed,
+        }} />
+      )}
+      {accountOpen && (
+        <AccountDrawer open leaseId={lease.id} residentName={lease.resident.fullName} monthlyRent={lease.monthlyRent}
+          onClose={() => setAccountOpen(false)} />
+      )}
     </div>
   );
 }

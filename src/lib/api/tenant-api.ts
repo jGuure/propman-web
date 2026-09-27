@@ -9,6 +9,13 @@ import type {
   BulkPreview,
   BulkUnitsRequest,
   CancelLeaseRequest,
+  Charge,
+  ChargeListParams,
+  CollectionSummary,
+  LeaseAccount,
+  PayChargeRequest,
+  PaymentRecord,
+  PaymentRequest,
   CreateLeaseRequest,
   EndLeaseRequest,
   Lease,
@@ -188,6 +195,22 @@ export function tenantApi(client: ApiClient) {
       client.post<Lease>(`/leases/${id}/deposit-received`, { receivedOn }),
     setRentalMode: (unitId: string, rentalMode: RentalMode) =>
       client.put<UnitDetails>(`/units/${unitId}/rental-mode`, { rentalMode }),
+
+    charges: (params: ChargeListParams) =>
+      client.get<PageResponse<Charge>>("/charges", {
+        ...params,
+        status: Array.isArray(params.status) ? params.status.join(",") : params.status,
+      }),
+    payCharge: (id: string, body: PayChargeRequest) => client.post<LeaseAccount>(`/charges/${id}/pay`, body),
+    markUnpaid: (id: string) => client.post<Charge>(`/charges/${id}/unpaid-mark`),
+    clearUnpaidMark: (id: string) => client.delete<Charge>(`/charges/${id}/unpaid-mark`),
+    recordPayment: (body: PaymentRequest) => client.post<LeaseAccount>("/payments", body),
+    reversePayment: (id: string, reason: string) => client.post<LeaseAccount>(`/payments/${id}/reverse`, { reason }),
+    leaseAccount: (leaseId: string) => client.get<LeaseAccount>(`/leases/${leaseId}/account`),
+    collectionSummary: (period?: string, propertyId?: string) =>
+      client.get<CollectionSummary>("/collections/summary", { period, propertyId }),
+    payments: (params: { leaseId?: string; residentId?: string; from?: string; to?: string; page?: number; size?: number }) =>
+      client.get<PageResponse<PaymentRecord>>("/payments", { ...params }),
   };
 }
 

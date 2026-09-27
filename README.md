@@ -14,6 +14,10 @@ Next.js frontend for [`ilsoftware-propman-api`](../ilsoftware-propman-api).
   record the move-out (settling a held deposit), cancel an upcoming lease, and switch between renting the whole
   apartment or room by room. The apartment status follows its leases; the building drawing shows the resident and
   "rented / bedrooms" for room-by-room apartments. API: `ilsoftware-propman-api/docs/phase2a-residents-leases.md`.
+- **Phase 2b**: rent collection — a **Collect rent** page per month (expected / collected / outstanding / to check,
+  one-tap *Paid* with EVC Plus, Zaad, eDahab, cash or bank, other amounts, *Not paid* for the month-end check), a
+  rent account per lease (bills, payments, reverse a mistake), "Owes $x" / "Paid until …" on every lease card and a
+  rent card on the dashboard. API: `ilsoftware-propman-api/README.md` ("Rent collection").
 - **Somalia focus**: English and Somali (switcher in the header and on sign-in pages), all amounts in US dollars,
   and apartments that can be rented are shown as **Available** (the API status is still `VACANT`).
 
@@ -154,6 +158,7 @@ src/
                             residents (+ [id]), leases, users, settings/organization, settings/amenities, profile
     admin/                  platform admin: login, tenants, tenant details
   components/               shared UI (AppShell, AuthCard, tags, tenant gate, user form)
+    payments/               rent collection: payment window, rent account drawer, account line
     leases/                 residents and leases: tenancy section, lease card, rent-out form, move-out, resident form
     portfolio/              property/flat/apartment forms, apartments table, apartment drawer + details,
                             rooms editor, photo gallery, amenity editor, status modal

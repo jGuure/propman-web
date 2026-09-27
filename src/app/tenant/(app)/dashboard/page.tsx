@@ -25,6 +25,10 @@ function DashboardPage() {
   const welcome = useSearchParams().get("welcome");
   const [openUnit, setOpenUnit] = useState<string>();
   const summary = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard });
+  const { canReadPayments } = usePortfolioPermissions();
+  const rent = useQuery({
+    queryKey: ["collection-summary", "dashboard"], queryFn: () => api.collectionSummary(), enabled: canReadPayments,
+  });
 
   if (!me) {
     return null;
@@ -74,6 +78,34 @@ function DashboardPage() {
                 formatter={() => formatMoney(s.potentialMonthlyRent.reduce((sum, r) => sum + r.amount, 0))} />
             </Card>
           </Col>
+          {canReadPayments && rent.data && rent.data.expected > 0 && (
+            <Col xs={24}>
+              <Card size="small">
+                <Flex justify="space-between" align="center" wrap gap={16}>
+                  <div style={{ minWidth: 220, flex: 1 }}>
+                    <Typography.Text type="secondary">{t("payments.rentThisMonth")}</Typography.Text>
+                    <div style={{ fontWeight: 600, fontSize: 18 }}>
+                      {t("payments.ofExpected", { collected: formatMoney(rent.data.collected), expected: formatMoney(rent.data.expected) })}
+                    </div>
+                    <Progress percent={Math.round((rent.data.collected / rent.data.expected) * 100)} size="small" style={{ margin: 0, maxWidth: 420 }} />
+                  </div>
+                  <Flex gap={24} wrap align="center">
+                    <div>
+                      <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("collect.outstanding")}</Typography.Text>
+                      <div style={{ fontWeight: 600, color: rent.data.outstanding > 0 ? "#cf1322" : undefined }}>{formatMoney(rent.data.outstanding)}</div>
+                    </div>
+                    <div>
+                      <Typography.Text type="secondary" style={{ fontSize: 13 }}>{t("collect.toCheck")}</Typography.Text>
+                      <div style={{ fontWeight: 600 }}>{rent.data.needsCheck}</div>
+                    </div>
+                    <Link href={rent.data.needsCheck > 0 ? "/collect?filter=check" : "/collect"}>
+                      <Button type="primary">{t("payments.goCollect")}</Button>
+                    </Link>
+                  </Flex>
+                </Flex>
+              </Card>
+            </Col>
+          )}
           <Col xs={24} lg={8}>
             <Card title={t("dashboard.occupancy")} style={{ height: "100%" }}>
               <Flex vertical align="center" gap={12}>

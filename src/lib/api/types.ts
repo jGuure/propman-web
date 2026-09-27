@@ -15,7 +15,9 @@ export type Permission =
   | "residents:read"
   | "residents:manage"
   | "leases:read"
-  | "leases:manage";
+  | "leases:manage"
+  | "payments:read"
+  | "payments:manage";
 
 export interface PageResponse<T> {
   content: T[];
@@ -586,6 +588,8 @@ export interface Enums {
   depositSettlements: DepositStatus[];
   residentIdTypes: IdType[];
   rentableRoomTypes: RoomType[];
+  paymentMethods: PaymentMethod[];
+  chargeStatuses: ChargeStatus[];
 }
 
 // ---------------------------------------------------------------- residents & leases (phase 2a)
@@ -673,6 +677,7 @@ export interface Lease {
   endReason: string | null;
   /** Active with a planned end within 30 days (or passed without a recorded move-out). */
   endingSoon: boolean;
+  account: AccountSummary;
   createdAt: string;
   updatedAt: string;
 }
@@ -728,4 +733,110 @@ export interface LeaseListParams {
   page?: number;
   size?: number;
   sort?: string;
+}
+
+// ---------------------------------------------------------------- rent collection (phase 2b)
+
+export type PaymentMethod = "EVC_PLUS" | "ZAAD" | "EDAHAB" | "CASH" | "BANK" | "OTHER";
+/** DUE (not yet due), UNCONFIRMED (past due, nothing recorded, not checked), PARTLY_PAID, OVERDUE (marked not paid), PAID, VOID. */
+export type ChargeStatus = "DUE" | "UNCONFIRMED" | "PARTLY_PAID" | "OVERDUE" | "PAID" | "VOID";
+
+export interface AccountSummary {
+  /** Unpaid rent that is due. */
+  owed: number;
+  /** Paid in advance, not used yet. */
+  credit: number;
+  /** Last month (1st day) covered by payments, including months the credit pays. */
+  paidUntil: string | null;
+}
+
+export interface Charge {
+  id: string;
+  leaseId: string;
+  /** First day of the month billed. */
+  period: string;
+  dueDate: string;
+  amount: number;
+  paidAmount: number;
+  remaining: number;
+  currency: string;
+  status: ChargeStatus;
+  markedUnpaidAt: string | null;
+  lease: {
+    id: string;
+    unitId: string;
+    unitNumber: string;
+    propertyName: string;
+    buildingName: string | null;
+    roomName: string | null;
+    residentId: string;
+    residentName: string;
+    residentPhone: string;
+    monthlyRent: number;
+  };
+}
+
+export interface PaymentRecord {
+  id: string;
+  leaseId: string;
+  amount: number;
+  currency: string;
+  paidOn: string;
+  method: PaymentMethod;
+  reference: string | null;
+  note: string | null;
+  receivedByName: string | null;
+  createdAt: string;
+  reversed: boolean;
+  reversedAt: string | null;
+  reversedByName: string | null;
+  reverseReason: string | null;
+  residentName: string;
+  unitNumber: string;
+  roomName: string | null;
+}
+
+export interface LeaseAccount {
+  leaseId: string;
+  summary: AccountSummary;
+  charges: Charge[];
+  payments: PaymentRecord[];
+}
+
+export interface CollectionSummary {
+  period: string;
+  expected: number;
+  collected: number;
+  outstanding: number;
+  received: number;
+  counts: Record<ChargeStatus, number>;
+  needsCheck: number;
+}
+
+export interface ChargeListParams {
+  period?: string;
+  status?: ChargeStatus[] | string;
+  needsCheck?: boolean;
+  propertyId?: string;
+  leaseId?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export interface PaymentRequest {
+  leaseId: string;
+  amount: number;
+  paidOn?: string | null;
+  method: PaymentMethod;
+  reference?: string | null;
+  note?: string | null;
+}
+
+export interface PayChargeRequest {
+  paidOn?: string | null;
+  method: PaymentMethod;
+  reference?: string | null;
+  note?: string | null;
 }
