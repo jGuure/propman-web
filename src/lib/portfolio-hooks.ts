@@ -30,6 +30,7 @@ export function usePortfolioPermissions() {
     canReadPayments: permissions.includes("payments:read"),
     canManagePayments: permissions.includes("payments:manage"),
     canManageExpenses: permissions.includes("expenses:manage"),
+    canReadReports: permissions.includes("reports:read"),
     organizationCurrency: data?.organization.currency ?? "USD",
   };
 }

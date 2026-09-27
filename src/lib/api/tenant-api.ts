@@ -17,6 +17,9 @@ import type {
   PaymentRecord,
   PaymentRequest,
   Expense,
+  ArrearsReport,
+  IncomeReport,
+  OccupancyReport,
   ExpenseListParams,
   ExpenseRequest,
   ExpenseSummary,
@@ -223,6 +226,10 @@ export function tenantApi(client: ApiClient) {
       return client.post<Expense>(`/expenses/${id}/receipt`, form);
     },
     deleteExpenseReceipt: (id: string) => client.delete<Expense>(`/expenses/${id}/receipt`),
+    incomeReport: (params: { from?: string; to?: string; propertyId?: string }) =>
+      client.get<IncomeReport>("/reports/income", { ...params }),
+    arrearsReport: (propertyId?: string) => client.get<ArrearsReport>("/reports/arrears", { propertyId }),
+    occupancyReport: () => client.get<OccupancyReport>("/reports/occupancy"),
     paymentReceipt: (id: string) => client.get<Receipt>(`/payments/${id}/receipt`),
     leaseAccount: (leaseId: string) => client.get<LeaseAccount>(`/leases/${leaseId}/account`),
     collectionSummary: (period?: string, propertyId?: string) =>

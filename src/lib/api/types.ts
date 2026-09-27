@@ -18,7 +18,8 @@ export type Permission =
   | "leases:manage"
   | "payments:read"
   | "payments:manage"
-  | "expenses:manage";
+  | "expenses:manage"
+  | "reports:read";
 
 export interface PageResponse<T> {
   content: T[];
@@ -910,4 +911,67 @@ export interface ExpenseSummary {
   total: number;
   count: number;
   byCategory: Record<ExpenseCategory, number>;
+}
+
+// ---------------------------------------------------------------- reports
+
+export interface IncomeRow {
+  /** First day of the month; null for totals. */
+  month: string | null;
+  billed: number;
+  received: number;
+  expenses: number;
+  net: number;
+}
+
+export interface IncomeReport {
+  from: string;
+  to: string;
+  months: IncomeRow[];
+  totals: IncomeRow;
+  byProperty: { propertyId: string; propertyName: string; billed: number; received: number; expenses: number; net: number }[];
+}
+
+export interface ArrearsRow {
+  leaseId: string;
+  leaseStatus: LeaseStatus;
+  residentId: string;
+  residentName: string;
+  residentPhone: string;
+  unitId: string;
+  unitNumber: string;
+  roomName: string | null;
+  propertyName: string;
+  buildingName: string | null;
+  owed: number;
+  unpaidMonths: number;
+  oldestDueDate: string;
+  daysOverdue: number;
+  lastPaymentOn: string | null;
+}
+
+export interface ArrearsReport {
+  asOf: string;
+  total: number;
+  residents: number;
+  rows: ArrearsRow[];
+}
+
+export interface OccupancyRow {
+  propertyId: string | null;
+  propertyName: string | null;
+  total: number;
+  occupied: number;
+  reserved: number;
+  available: number;
+  maintenance: number;
+  inactive: number;
+  occupancyRate: number;
+  rentRoll: number;
+  potentialRent: number;
+}
+
+export interface OccupancyReport {
+  properties: OccupancyRow[];
+  totals: OccupancyRow;
 }
