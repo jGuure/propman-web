@@ -19,12 +19,10 @@ interface Props {
   extra?: React.ReactNode;
   /** List layout for narrow places such as the side panel. */
   compact?: boolean;
-  /** Opens the "Add room" form with this type preselected whenever it changes (e.g. "Add bedroom"). */
-  addRequest?: { type: RoomType; at: number };
 }
 
 /** The rooms of one apartment. Bedroom and bathroom counts of the apartment follow its rooms. */
-export function RoomsEditor({ unitId, canEdit, extra, compact = false, addRequest }: Props) {
+export function RoomsEditor({ unitId, canEdit, extra, compact = false }: Props) {
   const { api } = useTenant();
   const { t, tn } = useT();
   const labels = useLabels();
@@ -35,21 +33,13 @@ export function RoomsEditor({ unitId, canEdit, extra, compact = false, addReques
   const [form] = Form.useForm<RoomRequest>();
   const rooms = useQuery({ queryKey: ["rooms", unitId], queryFn: () => api.rooms(unitId) });
 
-  const [newType, setNewType] = useState<RoomType>("BEDROOM");
   useEffect(() => {
     if (editing.open) {
       form.resetFields();
-      form.setFieldsValue(editing.room ?? { type: newType });
+      form.setFieldsValue(editing.room ?? { type: "BEDROOM" });
     }
-  }, [editing, form, newType]);
+  }, [editing, form]);
 
-  // "Add bedroom" from outside: open the form once per request
-  const [handledRequest, setHandledRequest] = useState<number>();
-  if (addRequest && canEdit && addRequest.at !== handledRequest) {
-    setHandledRequest(addRequest.at);
-    setNewType(addRequest.type);
-    setEditing({ open: true });
-  }
 
   const refresh = () => invalidatePortfolio(queryClient);
   const save = useMutation({
@@ -95,7 +85,7 @@ export function RoomsEditor({ unitId, canEdit, extra, compact = false, addReques
         {canEdit && (
           <Space wrap>
             {extra}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setNewType("BEDROOM"); setEditing({ open: true }); }}>{t("rooms.add")}</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditing({ open: true })}>{t("rooms.add")}</Button>
           </Space>
         )}
       </Flex>

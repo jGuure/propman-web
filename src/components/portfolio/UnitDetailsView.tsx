@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
-import type { RoomType, StatusChange } from "@/lib/api/types";
+import type { StatusChange } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
 import { formatDateTime, formatMoney, fromNow } from "@/lib/format";
 import { UNIT_STATUS_BAR, useLabels } from "@/lib/labels";
@@ -33,7 +33,6 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   const { canManage, canReadLeases } = usePortfolioPermissions();
   const [editOpen, setEditOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [addRequest, setAddRequest] = useState<{ type: RoomType; at: number }>();
   const [showAllHistory, setShowAllHistory] = useState(false);
   const unit = useQuery({ queryKey: ["unit", unitId], queryFn: () => api.unit(unitId) });
   const history = useQuery({
@@ -83,9 +82,9 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
   );
   const roomsBlock = (
     <>
-      <BedroomWarning type={u.type} rooms={u.rooms} canEdit={canManage && !archived}
-        onAddBedroom={() => setAddRequest({ type: "BEDROOM", at: Date.now() })} onChangeType={() => setEditOpen(true)} />
-      <RoomsEditor unitId={u.id} canEdit={canManage && !archived} addRequest={addRequest} />
+      <BedroomWarning unitId={u.id} type={u.type} rooms={u.rooms} canEdit={canManage && !archived}
+        onChangeType={() => setEditOpen(true)} />
+      <RoomsEditor unitId={u.id} canEdit={canManage && !archived} />
     </>
   );
   const timelineItem = (c: StatusChange) => ({
@@ -212,9 +211,9 @@ export function UnitDetailsView({ unitId, compact = false }: { unitId: string; c
               </Card>
             )}
             <Card size="small" title={t("apartments.rooms")}>
-              <BedroomWarning type={u.type} rooms={u.rooms} canEdit={canEdit}
-                onAddBedroom={() => setAddRequest({ type: "BEDROOM", at: Date.now() })} onChangeType={() => setEditOpen(true)} />
-              <RoomsEditor unitId={u.id} canEdit={canEdit} addRequest={addRequest} compact />
+              <BedroomWarning unitId={u.id} type={u.type} rooms={u.rooms} canEdit={canEdit}
+                onChangeType={() => setEditOpen(true)} />
+              <RoomsEditor unitId={u.id} canEdit={canEdit} compact />
             </Card>
           </Flex>
         </Col>
