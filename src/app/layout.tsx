@@ -3,6 +3,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import { DEFAULT_LANG, isLang, LANG_COOKIE } from "@/i18n/core";
+import { configScript } from "@/lib/config";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -18,6 +19,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = isLang(saved) ? saved : DEFAULT_LANG;
   return (
     <html lang={lang} className={inter.variable}>
+      <head>
+        {/* runtime config (API URL, domains) from the server's env, before any app code runs */}
+        <script dangerouslySetInnerHTML={{ __html: configScript() }} />
+      </head>
       <body>
         <AntdRegistry>
           <Providers lang={lang}>{children}</Providers>

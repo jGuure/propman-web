@@ -93,13 +93,22 @@ browser blocks API calls and email links point to the wrong place.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8080/api/v1` | API base URL |
-| `NEXT_PUBLIC_BASE_DOMAIN` | `localhost` | Tenants are `<slug>.<base domain>`, platform admin is `admin.<base domain>` (prod: `propman.so`) |
-| `NEXT_PUBLIC_ROOT_URL` | `http://localhost:3000` | Root site |
-| `NEXT_PUBLIC_TENANT_URL_TEMPLATE` | `http://{slug}.localhost:3000` | Tenant URL (`{slug}` is replaced) |
-| `NEXT_PUBLIC_ADMIN_URL` | `http://admin.localhost:3000` | Platform admin |
+| `API_URL` | `http://localhost:8080/api/v1` | API base URL |
+| `BASE_DOMAIN` | `localhost` | Tenants are `<slug>.<base domain>`, platform admin is `admin.<base domain>` (prod: `propman.so`) |
+| `ROOT_URL` | `http://localhost:3000` | Root site |
+| `TENANT_URL_TEMPLATE` | `http://{slug}.localhost:3000` | Tenant URL (`{slug}` is replaced) |
+| `ADMIN_URL` | `http://admin.localhost:3000` | Platform admin |
 
-`NEXT_PUBLIC_*` values are compiled into the bundle: rebuild after changing them.
+These are read at runtime by the Next.js server and passed to the browser by the root layout (`window.__PROPMAN_CONFIG__`), so one build works on any domain: change them and restart, no rebuild. No domain is hardcoded anywhere.
+
+### Deployment (Dokploy)
+
+The `Dockerfile` builds the app and runs `next start` on port 3000 (not `output: "standalone"`, whose server does not run the host proxy, so company and admin subdomains would 404). In Dokploy,
+deploy it from Git with build type Dockerfile, give it the domains `example.com` and `*.example.com`, and set the
+five variables above, for example `API_URL=https://api.example.com/api/v1`, `BASE_DOMAIN=example.com`,
+`ROOT_URL=https://example.com`, `TENANT_URL_TEMPLATE=https://{slug}.example.com`,
+`ADMIN_URL=https://admin.example.com`. The full guide (DNS, database, API, HTTPS) is in the API repo:
+`docs/deploy-dokploy.md`.
 
 ## How it works
 
