@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { serverConfig } from "@/lib/config";
 import { classifyHost, TENANT_HEADER } from "@/lib/host";
 
 /**
@@ -10,7 +11,7 @@ import { classifyHost, TENANT_HEADER } from "@/lib/host";
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const host = classifyHost(request.headers.get("host"), process.env.NEXT_PUBLIC_BASE_DOMAIN ?? "localhost");
+  const host = classifyHost(request.headers.get("host"), serverConfig().baseDomain);
   const headers = new Headers(request.headers);
   headers.delete(TENANT_HEADER);
 
