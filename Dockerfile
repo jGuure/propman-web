@@ -6,7 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# public/ is empty in the repo (git does not keep empty folders), so make sure it exists for the copy below
+RUN mkdir -p public && npm run build
 
 FROM node:22-alpine
 WORKDIR /app
