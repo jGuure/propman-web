@@ -4,7 +4,8 @@ import { AppstoreAddOutlined, BankOutlined, BarsOutlined, DownOutlined, EditOutl
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Breadcrumb, Button, Card, Col, Drawer, Dropdown, Flex, Grid, Image, Result, Row, Segmented, Skeleton, Space, Tag, Typography } from "antd";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { Suspense, useMemo, useState } from "react";
 import { BuildingFormModal } from "@/components/portfolio/BuildingFormModal";
 import { BuildingExplorer } from "@/components/portfolio/explorer/BuildingExplorer";

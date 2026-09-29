@@ -31,11 +31,18 @@ export function FilterPanel({ active = 0, layout = "flex", children }: {
   );
   const sheet = (
     <Drawer open={open} onClose={() => setOpen(false)} placement="bottom" title={t("common.filters")}
-      size="auto" styles={{ body: { paddingBottom: 16 }, wrapper: { maxHeight: "85vh" } }}
+      size="auto" rootClassName="filter-sheet-drawer"
+      styles={{
+        // same side padding everywhere, room between the fields, and space above the phone's home bar
+        header: { padding: "16px 20px" },
+        body: { padding: "20px 20px 16px" },
+        footer: { padding: "8px 20px calc(32px + env(safe-area-inset-bottom))", borderTop: "none" },
+        wrapper: { maxHeight: "85vh" },
+      }}
       footer={<Button type="primary" block size="large" onClick={() => setOpen(false)}>{t("common.showResults")}</Button>}>
       {layout === "row"
-        ? <Row gutter={[12, 12]}>{children}</Row>
-        : <Flex vertical gap={12} className="filter-sheet">{children}</Flex>}
+        ? <Row gutter={[12, 16]} className="filter-sheet">{children}</Row>
+        : <Flex vertical gap={16} className="filter-sheet">{children}</Flex>}
     </Drawer>
   );
 

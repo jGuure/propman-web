@@ -13,7 +13,7 @@ export function BrandLogo({ name, logoUrl, size = 48 }: { name: string; logoUrl?
     .join("");
   return (
     <Avatar shape="square" size={size} src={logoUrl || undefined} alt={name}
-      style={{ background: logoUrl ? "#fff" : brand.primary, fontWeight: 600 }}>
+      style={{ background: logoUrl ? "#fff" : brand.primary, fontWeight: 600, flexShrink: 0 }}>
       {initials || "P"}
     </Avatar>
   );

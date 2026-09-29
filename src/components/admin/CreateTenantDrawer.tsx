@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Col, Divider, Drawer, Form, Input, Row, Select, Space, Switch, Typography } from "antd";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useMemo, useRef } from "react";
 import { errorMessage, hasFieldErrors } from "@/lib/api/errors";
 import type { RegisterRequest } from "@/lib/api/types";

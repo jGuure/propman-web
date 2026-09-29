@@ -18,6 +18,8 @@ export interface NavItem {
 
 interface AppShellProps {
   brand: ReactNode;
+  /** Just the logo, shown when the sidebar is collapsed. */
+  logo: ReactNode;
   /** Shown in the top bar on phones, where the sidebar (and its brand) is hidden. */
   title: string;
   nav: NavItem[];
@@ -36,7 +38,7 @@ interface AppShellProps {
  * Signed-in layout: collapsible sidebar, top bar with the user menu, content area. On phones the sidebar becomes a
  * slide-in menu opened from the top bar, which closes again once a page is picked.
  */
-export function AppShell({ brand, title, nav, userName, userDetail, userMenu, onSignOut, pathPrefix, translated = false, children }: AppShellProps) {
+export function AppShell({ brand, logo, title, nav, userName, userDetail, userMenu, onSignOut, pathPrefix, translated = false, children }: AppShellProps) {
   const { t } = useT();
   const mobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(false);
@@ -59,7 +61,10 @@ export function AppShell({ brand, title, nav, userName, userDetail, userMenu, on
     <Layout style={{ minHeight: "100vh" }}>
       {!mobile && (
         <Layout.Sider collapsible collapsed={collapsed} trigger={null} width={232} collapsedWidth={72}>
-          <div style={{ padding: collapsed ? "20px 12px" : "20px 20px", overflow: "hidden" }}>{brand}</div>
+          {/* collapsed: only the logo, centred at its normal size (the name would be cut to "H…") */}
+          <div style={{ padding: collapsed ? "20px 0" : "20px 20px", overflow: "hidden", display: collapsed ? "flex" : "block", justifyContent: "center" }}>
+            {collapsed ? logo : brand}
+          </div>
           {menu}
         </Layout.Sider>
       )}

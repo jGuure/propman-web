@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { ApiClient } from "@/lib/api/client";
 import { platformApi, type PlatformApi } from "@/lib/api/platform-api";

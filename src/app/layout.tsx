@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
+import NextTopLoader from "nextjs-toploader";
 import { DEFAULT_LANG, isLang, LANG_COOKIE } from "@/i18n/core";
 import { configScript } from "@/lib/config";
+import { brand } from "@/lib/theme";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -24,6 +26,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: configScript() }} />
       </head>
       <body>
+        {/* thin progress bar at the top while a page loads */}
+        <NextTopLoader color={brand.primary} height={3} showSpinner={false} shadow={false} />
         <AntdRegistry>
           <Providers lang={lang}>{children}</Providers>
         </AntdRegistry>

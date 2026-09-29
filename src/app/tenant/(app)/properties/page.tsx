@@ -4,7 +4,7 @@ import { AppstoreOutlined, BarsOutlined, HomeOutlined, PlusOutlined } from "@ant
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { AutoComplete, Button, Card, Col, Empty, Flex, Image, Input, Pagination, Progress, Row, Segmented, Select, Space, Typography, type TableProps } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { Suspense, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { FilterPanel } from "@/components/FilterPanel";

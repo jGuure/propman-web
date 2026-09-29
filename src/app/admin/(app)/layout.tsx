@@ -2,9 +2,10 @@
 
 import { ShopOutlined } from "@ant-design/icons";
 import { Button, Flex, Result, Typography } from "antd";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
+import { BrandLogo } from "@/components/BrandLogo";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { errorMessage } from "@/lib/api/errors";
 import { usePlatform, usePlatformMe } from "@/lib/auth/platform-context";
@@ -41,6 +42,7 @@ export default function PlatformAppLayout({ children }: LayoutProps<"/admin">) {
       userDetail="Platform admin"
       userMenu={[]}
       onSignOut={signOut}
+      logo={<BrandLogo name="Prop Management" size={40} />}
       brand={
         <Flex vertical>
           <Typography.Text strong style={{ color: "#fff", fontSize: 16, whiteSpace: "nowrap" }}>PropManagement</Typography.Text>
