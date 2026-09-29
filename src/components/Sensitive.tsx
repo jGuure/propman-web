@@ -8,8 +8,9 @@ import { useT } from "@/i18n/provider";
 const SHOW_FOR_MS = 20_000;
 
 /**
- * Personal details (ID numbers, phones, emails) shown blurred, so they cannot be read over someone's shoulder or in
- * a shared screen. A tap reveals the value for 20 seconds; the first tap on a blurred link only reveals it.
+ * Identity document numbers (national ID, passport) shown blurred, so they cannot be read over someone's shoulder or
+ * in a shared screen. A tap reveals the value for 20 seconds. Phones and emails stay readable: they are used to call
+ * and message residents all day.
  */
 export function Sensitive({ children }: { children: ReactNode }) {
   const { t } = useT();

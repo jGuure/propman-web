@@ -3,7 +3,8 @@
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useMutation } from "@tanstack/react-query";
 import { Alert, Button, Form, Input } from "antd";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { Suspense, useEffect } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { errorMessage } from "@/lib/api/errors";

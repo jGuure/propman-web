@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useEffect } from "react";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { usePlatform } from "@/lib/auth/platform-context";

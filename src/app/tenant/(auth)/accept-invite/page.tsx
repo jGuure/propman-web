@@ -3,7 +3,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Form, Input, Result, Skeleton } from "antd";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { Suspense } from "react";
 import { AuthCard } from "@/components/AuthCard";
 import { useBranding } from "@/components/tenant/TenantGate";

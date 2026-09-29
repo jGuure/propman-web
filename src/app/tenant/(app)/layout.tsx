@@ -2,7 +2,7 @@
 
 import { AppstoreOutlined, BarChartOutlined, DashboardOutlined, HomeOutlined, IdcardOutlined, SolutionOutlined, SettingOutlined, ShoppingCartOutlined, TagsOutlined, TeamOutlined, UserOutlined, WalletOutlined } from "@ant-design/icons";
 import { Button, Flex, Result, Typography } from "antd";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useEffect } from "react";
 import { AppShell, type NavItem } from "@/components/AppShell";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -68,9 +68,10 @@ export default function TenantAppLayout({ children }: LayoutProps<"/tenant">) {
       userDetail={t(`roles.${user.role}`)}
       onSignOut={signOut}
       userMenu={[{ key: "profile", icon: <UserOutlined />, label: t("nav.myProfile"), onClick: () => router.push("/profile") }]}
+      logo={<BrandLogo name={organization.name} logoUrl={organization.logoUrl} size={40} />}
       brand={
         <Flex align="center" gap={10}>
-          <BrandLogo name={organization.name} logoUrl={organization.logoUrl} size={36} />
+          <div style={{ flexShrink: 0 }}><BrandLogo name={organization.name} logoUrl={organization.logoUrl} size={36} /></div>
           <Typography.Text strong ellipsis style={{ color: "#fff", maxWidth: 160 }}>{organization.name}</Typography.Text>
         </Flex>
       }>

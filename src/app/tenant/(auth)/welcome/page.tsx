@@ -2,7 +2,7 @@
 
 import { Button, Flex, Result } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useEffect, useRef, useState } from "react";
 import { FullPageSpinner } from "@/components/FullPageSpinner";
 import { useT } from "@/i18n/provider";

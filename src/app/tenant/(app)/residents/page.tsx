@@ -4,7 +4,7 @@ import { PhoneOutlined, UserAddOutlined } from "@ant-design/icons";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Button, Card, Empty, Flex, Grid, Input, Result, Segmented, Select, Tag, Typography, type TableProps } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { ResponsiveTable } from "@/components/ResponsiveTable";
@@ -66,7 +66,7 @@ function ResidentsPage() {
     },
     {
       title: t("residents.phone"), key: "phone",
-      render: (_, r) => <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> <Sensitive>{r.phone}</Sensitive></a>,
+      render: (_, r) => <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {r.phone}</a>,
     },
     {
       title: t("residents.leases"), key: "leases", align: "right",
