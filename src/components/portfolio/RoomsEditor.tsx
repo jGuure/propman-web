@@ -2,9 +2,10 @@
 
 import { ArrowDownOutlined, ArrowUpOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Empty, Flex, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from "antd";
+import { App, Button, Empty, Flex, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useT } from "@/i18n/provider";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { errorMessage } from "@/lib/api/errors";
 import type { Room, RoomRequest, RoomType } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
@@ -113,7 +114,7 @@ export function RoomsEditor({ unitId, canEdit, extra, compact = false }: Props) 
           ))}
         </Flex>
       ) : (
-      <Table<Room> rowKey="id" size="small" pagination={false} loading={rooms.isFetching} dataSource={list}
+      <ResponsiveTable<Room> rowKey="id" size="small" pagination={false} loading={rooms.isFetching} dataSource={list}
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("rooms.none")} /> }}
         columns={[
           { title: t("rooms.room"), dataIndex: "name", render: (name: string, r) => <Space><Typography.Text strong>{name}</Typography.Text>{r.notes && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{r.notes}</Typography.Text>}</Space> },

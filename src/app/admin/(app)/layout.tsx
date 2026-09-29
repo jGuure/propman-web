@@ -35,6 +35,7 @@ export default function PlatformAppLayout({ children }: LayoutProps<"/admin">) {
   return (
     <AppShell
       pathPrefix="/admin"
+      title="Platform admin"
       nav={[{ key: "tenants", href: "/tenants", label: "Tenants", icon: <ShopOutlined /> }]}
       userName={me.data.fullName}
       userDetail="Platform admin"

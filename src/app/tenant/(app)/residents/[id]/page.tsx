@@ -2,11 +2,13 @@
 
 import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, InboxOutlined, MailOutlined, MoreOutlined, PhoneOutlined, UndoOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Avatar, Button, Card, Col, Dropdown, Empty, Flex, Result, Row, Skeleton, Space, Table, Tabs, Tag, Typography, type MenuProps } from "antd";
+import { Alert, App, Avatar, Button, Card, Col, Dropdown, Empty, Flex, Result, Row, Skeleton, Space, Tabs, Tag, Typography, type MenuProps } from "antd";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { LeaseCard } from "@/components/leases/LeaseCard";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
+import { Sensitive } from "@/components/Sensitive";
 import { PrintLink } from "@/components/payments/PrintPreview";
 import { ResidentFormModal } from "@/components/leases/ResidentFormModal";
 import { whatsappNumber } from "@/components/payments/PrintFrame";
@@ -134,8 +136,8 @@ export default function ResidentPage() {
               {r.archivedAt && <Tag>{t("residents.archived")}</Tag>}
             </Space>
             <Flex gap={14} wrap style={{ fontSize: 14, marginTop: 2 }}>
-              <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {r.phone}</a>
-              {r.idNumber && <Typography.Text type="secondary">{t(`idType.${r.idType ?? "OTHER"}`)} {r.idNumber}</Typography.Text>}
+              <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> <Sensitive>{r.phone}</Sensitive></a>
+              {r.idNumber && <Typography.Text type="secondary">{t(`idType.${r.idType ?? "OTHER"}`)} <Sensitive>{r.idNumber}</Sensitive></Typography.Text>}
             </Flex>
           </div>
         </Flex>
@@ -172,7 +174,7 @@ export default function ResidentPage() {
               ...(canReadPayments ? [{
                 key: "payments", label: `${t("residents.tabPayments")} (${payments.data?.totalElements ?? 0})`,
                 children: (
-                  <Table<PaymentRecord> rowKey="id" size="small" columns={paymentColumns} dataSource={payments.data?.content}
+                  <ResponsiveTable<PaymentRecord> rowKey="id" size="small" columns={paymentColumns} dataSource={payments.data?.content}
                     loading={payments.isFetching} pagination={false} scroll={{ x: 560 }}
                     locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("payments.noPayments")} /> }} />
                 ),
@@ -189,10 +191,10 @@ export default function ResidentPage() {
         <Col xs={24} lg={8}>
           <Card size="small" title={t("residents.contact")}>
             <Flex vertical gap={8} style={{ fontSize: 14 }}>
-              <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {r.phone}</a>
+              <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> <Sensitive>{r.phone}</Sensitive></a>
               {r.altPhone && <a href={`tel:${r.altPhone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {r.altPhone}</a>}
-              {r.email && <a href={`mailto:${r.email}`}><MailOutlined /> {r.email}</a>}
-              {r.idNumber && <Typography.Text>{t(`idType.${r.idType ?? "OTHER"}`)}: {r.idNumber}</Typography.Text>}
+              {r.email && <a href={`mailto:${r.email}`}><MailOutlined /> <Sensitive>{r.email}</Sensitive></a>}
+              {r.idNumber && <Typography.Text>{t(`idType.${r.idType ?? "OTHER"}`)}: <Sensitive>{r.idNumber}</Sensitive></Typography.Text>}
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t("common.added")}: {formatDate(r.createdAt)}</Typography.Text>
             </Flex>
             {r.notes && <Typography.Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0, whiteSpace: "pre-line" }}>{r.notes}</Typography.Paragraph>}

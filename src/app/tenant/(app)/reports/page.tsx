@@ -2,11 +2,12 @@
 
 import { DownloadOutlined, PhoneOutlined, PrinterOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Card, DatePicker, Empty, Flex, Progress, Result, Select, Skeleton, Table, Tabs, Tooltip, Typography, type TableProps } from "antd";
+import { Alert, Button, Card, DatePicker, Empty, Flex, Progress, Result, Select, Skeleton, Tabs, Tooltip, Typography, type TableProps } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { openPrintPreview } from "@/components/payments/PrintPreview";
 import { whatsappNumber } from "@/components/payments/PrintFrame";
 import { IncomeChart } from "@/components/reports/IncomeChart";
@@ -108,12 +109,12 @@ function IncomeTab() {
               : <IncomeChart months={r.months} />}
           </Card>
           <Typography.Title level={5}>{t("reports.perMonth")}</Typography.Title>
-          <Table<IncomeRow> rowKey={(row) => row.month ?? "total"} size="small" pagination={false} columns={monthColumns}
+          <ResponsiveTable<IncomeRow> rowKey={(row) => row.month ?? "total"} size="small" pagination={false} columns={monthColumns}
             dataSource={[...r.months, r.totals]} scroll={{ x: 560 }} style={{ marginBottom: 20 }} />
           {!propertyId && r.byProperty.length > 1 && (
             <>
               <Typography.Title level={5}>{t("reports.perProperty")}</Typography.Title>
-              <Table rowKey="propertyId" size="small" pagination={false} dataSource={r.byProperty} scroll={{ x: 560 }}
+              <ResponsiveTable rowKey="propertyId" size="small" pagination={false} dataSource={r.byProperty} scroll={{ x: 560 }}
                 columns={[
                   { title: t("reports.property"), dataIndex: "propertyName" },
                   { title: t("reports.billed"), align: "right", render: (_, p) => formatMoney(p.billed) },
@@ -206,7 +207,7 @@ function ArrearsTab() {
             <Tile label={t("reports.totalOwed")} value={formatMoney(r.total)} tone={r.total > 0 ? "bad" : undefined} />
             <Tile label={t("reports.residentsOwing")} value={String(r.residents)} />
           </Flex>
-          <Table<ArrearsRow> rowKey="leaseId" size="middle" columns={columns} dataSource={r.rows} pagination={false}
+          <ResponsiveTable<ArrearsRow> rowKey="leaseId" size="middle" columns={columns} dataSource={r.rows} pagination={false}
             scroll={{ x: 820 }} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("reports.nobodyOwes")} /> }} />
         </>
       )}
@@ -252,7 +253,7 @@ function OccupancyTab() {
             <Tile label={t("reports.rentRoll")} value={formatMoney(r.totals.rentRoll)} />
             <Tile label={t("reports.potential")} value={formatMoney(r.totals.potentialRent)} />
           </Flex>
-          <Table<OccupancyRow> rowKey={(row) => row.propertyId ?? "total"} size="middle" columns={columns}
+          <ResponsiveTable<OccupancyRow> rowKey={(row) => row.propertyId ?? "total"} size="middle" columns={columns}
             dataSource={[...r.properties, r.totals]} pagination={false} scroll={{ x: 900 }} />
         </>
       )}

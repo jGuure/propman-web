@@ -2,12 +2,13 @@
 
 import { AppstoreOutlined, HomeOutlined, PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Card, Col, Empty, Flex, Progress, Row, Skeleton, Statistic, Table, Typography } from "antd";
+import { Alert, Button, Card, Col, Empty, Flex, Progress, Row, Skeleton, Statistic, Typography } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { StatusBar } from "@/components/portfolio/StatusBar";
 import { UnitDrawer } from "@/components/portfolio/UnitDrawer";
 import { useT } from "@/i18n/provider";
@@ -142,7 +143,7 @@ function DashboardPage() {
             <Card title={t("dashboard.byStatus")} style={{ height: "100%" }} extra={<Link href="/units">{t("dashboard.allApartments")}</Link>}>
               <StatusBar counts={s.unitsByStatus} />
               <Typography.Title level={5} style={{ marginTop: 24 }}>{t("dashboard.longestAvailable")}</Typography.Title>
-              <Table size="small" rowKey="id" pagination={false} dataSource={s.vacantUnits}
+              <ResponsiveTable size="small" rowKey="id" pagination={false} dataSource={s.vacantUnits}
                 locale={{ emptyText: t("dashboard.noAvailable") }}
                 onRow={(row) => ({ onClick: () => setOpenUnit(row.id), style: { cursor: "pointer" } })}
                 columns={[

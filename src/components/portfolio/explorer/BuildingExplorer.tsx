@@ -7,6 +7,7 @@ import type { PropertyStructure, StructureApartment, StructureFloor, UnitStatus 
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/i18n/provider";
 import { UNIT_STATUS_BAR, UNIT_STATUS_COLORS, useLabels } from "@/lib/labels";
+import { useIsMobile } from "@/lib/responsive";
 import { brand } from "@/lib/theme";
 
 interface Props {
@@ -21,6 +22,7 @@ const STATUSES: UnitStatus[] = ["VACANT", "RESERVED", "OCCUPIED", "MAINTENANCE",
 
 /** The flats drawn as buildings: floors stacked from the top floor down, apartments as colored boxes. */
 export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentId, onSelectFlat, onSelectApartment }: Props) {
+  const mobile = useIsMobile();
   const { t, tn } = useT();
   const labels = useLabels();
   const [highlight, setHighlight] = useState<UnitStatus | undefined>();
@@ -65,8 +67,9 @@ export function BuildingExplorer({ structure, selectedFlatId, selectedApartmentI
           value={search} onChange={(e) => setSearch(e.target.value)} />
       </Flex>
 
-      <div style={{ overflowX: "auto", paddingBottom: 8 }}>
-        <Flex gap={20} align="flex-end" style={{ minWidth: "min-content" }}>
+      {/* phones: flats stacked and floors wrapping, so nothing scrolls sideways */}
+      <div style={{ overflowX: mobile ? undefined : "auto", paddingBottom: 8 }}>
+        <Flex gap={20} vertical={mobile} align={mobile ? "stretch" : "flex-end"} style={{ minWidth: mobile ? undefined : "min-content" }}>
           {structure.flats.map((flat) => {
             const byFloor = new Map(flat.floors.map((f) => [f.floor, f.apartments]));
             const floors: StructureFloor[] = [];
@@ -111,7 +114,7 @@ function Flat({ title, subtitle, lift, selected, onSelect, children }: {
 }) {
   const { t } = useT();
   return (
-    <div style={{ flexShrink: 0 }}>
+    <div style={{ flexShrink: 0, minWidth: 0 }}>
       <button type="button" onClick={onSelect} disabled={!onSelect}
         style={{
           display: "block", width: "100%", textAlign: "left", cursor: onSelect ? "pointer" : "default",
@@ -138,13 +141,14 @@ function Flat({ title, subtitle, lift, selected, onSelect, children }: {
 
 function FloorRow({ floor, children }: { floor: number; children: React.ReactNode }) {
   const labels = useLabels();
+  const mobile = useIsMobile();
   return (
     <Flex align="center" gap={8} style={{
       padding: "4px 0", borderBottom: "1px dashed #eceff0", minHeight: 50,
       background: floor < 0 ? "repeating-linear-gradient(135deg,#fafafa,#fafafa 6px,#f3f4f6 6px,#f3f4f6 12px)" : undefined,
     }}>
       <Typography.Text type="secondary" style={{ width: 54, fontSize: 11, flexShrink: 0 }}>{labels.floor(floor)}</Typography.Text>
-      <Flex gap={6} wrap={false}>{children}</Flex>
+      <Flex gap={6} wrap={mobile}>{children}</Flex>
     </Flex>
   );
 }

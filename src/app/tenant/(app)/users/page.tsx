@@ -2,9 +2,11 @@
 
 import { MoreOutlined, UserAddOutlined } from "@ant-design/icons";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Dropdown, Flex, Input, Result, Select, Table, Typography, type MenuProps, type TableProps } from "antd";
+import { App, Button, Card, Dropdown, Flex, Input, Result, Select, Typography, type MenuProps, type TableProps } from "antd";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { FilterPanel } from "@/components/FilterPanel";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { RoleTag, UserStatusTag } from "@/components/tags";
 import { UserFormModal } from "@/components/tenant/UserFormModal";
 import { useT } from "@/i18n/provider";
@@ -128,12 +130,14 @@ export default function UsersPage() {
         <Flex gap={12} wrap style={{ marginBottom: 16 }}>
           <Input.Search placeholder={t("users.searchPlaceholder")} allowClear style={{ maxWidth: 280 }}
             onSearch={(search) => update({ search: search || undefined })} />
-          <Select placeholder={t("users.allRoles")} allowClear style={{ width: 160 }} onChange={(role?: UserRole) => update({ role })}
+          <FilterPanel active={[params.role, params.status].filter(Boolean).length}>
+<Select placeholder={t("users.allRoles")} allowClear style={{ width: 160 }} onChange={(role?: UserRole) => update({ role })}
             options={USER_ROLES.map((r) => ({ value: r, label: labels.role(r) }))} />
           <Select placeholder={t("users.allStatuses")} allowClear style={{ width: 160 }} onChange={(status?: UserStatus) => update({ status })}
             options={USER_STATUSES.map((s) => ({ value: s, label: labels.userStatus(s) }))} />
+          </FilterPanel>
         </Flex>
-        <Table<User> rowKey="id" columns={columns} dataSource={users.data?.content} loading={users.isFetching}
+        <ResponsiveTable<User> rowKey="id" columns={columns} dataSource={users.data?.content} loading={users.isFetching}
           onChange={onTableChange} scroll={{ x: 600 }}
           locale={{ emptyText: users.error ? errorMessage(users.error) : t("users.noMatch") }}
           pagination={{
