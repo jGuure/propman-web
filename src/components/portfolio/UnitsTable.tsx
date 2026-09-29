@@ -2,9 +2,11 @@
 
 import { MoreOutlined, PlusOutlined } from "@ant-design/icons";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Col, Dropdown, Empty, Flex, Input, InputNumber, Row, Select, Space, Table, Typography, type MenuProps, type TableProps } from "antd";
+import { App, Button, Card, Col, Dropdown, Empty, Flex, Input, InputNumber, Row, Select, Space, Typography, type MenuProps, type TableProps } from "antd";
 import { useState } from "react";
 import { useT } from "@/i18n/provider";
+import { FilterPanel } from "@/components/FilterPanel";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { errorMessage } from "@/lib/api/errors";
 import type { UnitListParams, UnitStatus, UnitSummary, UnitType } from "@/lib/api/types";
 import { useTenant } from "@/lib/auth/tenant-context";
@@ -154,6 +156,9 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
   const hasFilters = ["buildingId", "status", "type", "bedrooms", "floor", "furnished", "minRent", "maxRent", "search",
     "archived"].some((k) => url.get(k) !== undefined) || (!propertyId && url.get("propertyId") !== undefined);
 
+  const activeFilters = ["buildingId", "status", "type", "bedrooms", "furnished", "minRent", "maxRent", "archived"]
+    .filter((k) => url.get(k) !== undefined).length + (!propertyId && url.get("propertyId") !== undefined ? 1 : 0);
+
   return (
     <Card>
       <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
@@ -162,6 +167,7 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
             defaultValue={params.search}
             onSearch={(search) => url.set({ search })} />
         </Col>
+        <FilterPanel layout="row" active={activeFilters}>
         {!propertyId && (
           <Col xs={12} md={8} lg={4}>
             <Select allowClear placeholder={t("apartments.property")} style={{ width: "100%" }} value={params.propertyId}
@@ -215,8 +221,9 @@ export function UnitsTable({ propertyId, onOpenUnit, onAddUnit }: Props) {
             onChange={(v) => url.set({ archived: v === "archived" ? true : undefined })}
             options={[{ value: "current", label: t("common.current") }, { value: "archived", label: t("common.archived") }]} />
         </Col>
+        </FilterPanel>
       </Row>
-      <Table<UnitSummary> rowKey="id" columns={columns} dataSource={units.data?.content} loading={units.isFetching}
+      <ResponsiveTable<UnitSummary> rowKey="id" columns={columns} dataSource={units.data?.content} loading={units.isFetching}
         onChange={onChange} scroll={{ x: 900 }} size="middle"
         locale={{
           emptyText: units.error ? errorMessage(units.error) : (

@@ -2,11 +2,13 @@
 
 import { AppstoreOutlined, BarsOutlined, HomeOutlined, PlusOutlined } from "@ant-design/icons";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { AutoComplete, Button, Card, Col, Empty, Flex, Image, Input, Pagination, Progress, Row, Segmented, Select, Space, Table, Typography, type TableProps } from "antd";
+import { AutoComplete, Button, Card, Col, Empty, Flex, Image, Input, Pagination, Progress, Row, Segmented, Select, Space, Typography, type TableProps } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { FilterPanel } from "@/components/FilterPanel";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { PropertyFormDrawer } from "@/components/portfolio/PropertyFormDrawer";
 import { PropertyStatusTag } from "@/components/portfolio/tags";
 import { useT } from "@/i18n/provider";
@@ -98,7 +100,8 @@ function PropertiesPage() {
           <Space wrap>
             <Input.Search key={params.search ?? ""} placeholder={t("properties.searchPlaceholder")} allowClear style={{ width: 240 }}
               defaultValue={params.search} onSearch={(search) => url.set({ search })} />
-            <Select allowClear placeholder={t("common.type")} style={{ width: 150 }} value={params.type}
+            <FilterPanel active={[params.type, params.status, params.city].filter(Boolean).length}>
+<Select allowClear placeholder={t("common.type")} style={{ width: 150 }} value={params.type}
               onChange={(type) => url.set({ type })}
               options={PROPERTY_TYPES.map((type) => ({ value: type, label: labels.propertyType(type) }))} />
             <Select allowClear placeholder={t("common.status")} style={{ width: 150 }} value={params.status}
@@ -108,6 +111,7 @@ function PropertiesPage() {
               options={SOMALI_CITIES.map((c) => ({ value: c }))} onSelect={(city?: string) => url.set({ city })}
               onChange={(v?: string) => { if (!v) url.set({ city: undefined }); }}
               onBlur={(e) => url.set({ city: (e.target as HTMLInputElement).value || undefined })} />
+          </FilterPanel>
           </Space>
           <Segmented value={view} onChange={(v) => url.set({ view: v === "cards" ? "cards" : undefined, size: undefined })}
             options={[{ value: "table", icon: <BarsOutlined />, label: t("properties.table") }, { value: "cards", icon: <AppstoreOutlined />, label: t("properties.cards") }]} />
@@ -115,7 +119,7 @@ function PropertiesPage() {
       </Card>
       {view === "table" ? (
         <Card>
-          <Table<PropertySummary> rowKey="id" columns={columns} dataSource={content} loading={properties.isFetching}
+          <ResponsiveTable<PropertySummary> rowKey="id" columns={columns} dataSource={content} loading={properties.isFetching}
             scroll={{ x: 800 }} onRow={(p) => ({ onDoubleClick: () => open(p.id) })}
             locale={{ emptyText: properties.error ? errorMessage(properties.error) : empty }}
             onChange={(pagination, _f, sorter) => {

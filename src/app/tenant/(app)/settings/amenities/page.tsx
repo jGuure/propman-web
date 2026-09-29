@@ -2,9 +2,10 @@
 
 import { DeleteOutlined, EditOutlined, LockOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
+import { App, Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
 import type { Amenity, AmenityScope } from "@/lib/api/types";
@@ -49,7 +50,7 @@ export default function AmenitiesPage() {
       <PageHeader title={t("amenities.title")} description={t("amenities.subtitle")}
         extra={canManageAmenities && <Button type="primary" icon={<PlusOutlined />} onClick={() => setModal({ open: true })}>{t("amenities.add")}</Button>} />
       <Card>
-        <Table<Amenity> rowKey="id" dataSource={amenities.data} loading={amenities.isFetching} pagination={false}
+        <ResponsiveTable<Amenity> rowKey="id" dataSource={amenities.data} loading={amenities.isFetching} pagination={false}
           scroll={{ x: 500 }}
           columns={[
             {

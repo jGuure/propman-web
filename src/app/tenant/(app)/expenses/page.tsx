@@ -2,10 +2,12 @@
 
 import { DeleteOutlined, EditOutlined, PaperClipOutlined, PlusOutlined } from "@ant-design/icons";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Col, DatePicker, Empty, Flex, Input, Popconfirm, Progress, Result, Row, Select, Table, Tag, Typography, type TableProps } from "antd";
+import { App, Button, Card, Col, DatePicker, Empty, Flex, Input, Popconfirm, Progress, Result, Row, Select, Tag, Typography, type TableProps } from "antd";
 import dayjs from "dayjs";
 import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { FilterPanel } from "@/components/FilterPanel";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { EXPENSE_CATEGORIES, ExpenseFormDrawer } from "@/components/expenses/ExpenseFormDrawer";
 import { invalidatePortfolio } from "@/components/portfolio/invalidate";
 import { useT } from "@/i18n/provider";
@@ -128,14 +130,16 @@ function ExpensesPage() {
         <Flex gap={12} wrap style={{ marginBottom: 16 }}>
           <Input.Search key={filters.search ?? ""} defaultValue={filters.search} allowClear style={{ width: 260 }}
             placeholder={t("expenses.searchPlaceholder")} onSearch={(search) => url.set({ search })} />
-          <Select allowClear placeholder={t("expenses.property")} style={{ width: 200 }} value={filters.propertyId}
+          <FilterPanel active={[filters.propertyId, filters.category].filter(Boolean).length}>
+<Select allowClear placeholder={t("expenses.property")} style={{ width: 200 }} value={filters.propertyId}
             showSearch={{ optionFilterProp: "label" }} onChange={(v) => url.set({ propertyId: v })}
             options={(properties.data?.content ?? []).map((p) => ({ value: p.id, label: p.name }))} />
           <Select allowClear placeholder={t("expenses.allCategories")} style={{ width: 190 }} value={filters.category}
             onChange={(v) => url.set({ category: v })}
             options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: t(`expenseCategory.${c}`) }))} />
+          </FilterPanel>
         </Flex>
-        <Table<Expense> rowKey="id" columns={columns} dataSource={list.data?.content} loading={list.isFetching}
+        <ResponsiveTable<Expense> rowKey="id" columns={columns} dataSource={list.data?.content} loading={list.isFetching}
           scroll={{ x: 820 }} size="middle"
           locale={{
             emptyText: list.error ? errorMessage(list.error) : (

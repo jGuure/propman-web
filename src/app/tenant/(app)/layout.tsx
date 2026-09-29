@@ -62,6 +62,7 @@ export default function TenantAppLayout({ children }: LayoutProps<"/tenant">) {
     <AppShell
       pathPrefix="/tenant"
       translated
+      title={organization.name}
       nav={nav}
       userName={user.fullName}
       userDetail={t(`roles.${user.role}`)}

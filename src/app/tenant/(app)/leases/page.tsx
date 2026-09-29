@@ -1,10 +1,11 @@
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Card, Empty, Flex, Grid, Input, Result, Segmented, Select, Table, Typography, type TableProps } from "antd";
+import { Card, Empty, Flex, Grid, Input, Result, Segmented, Select, Typography, type TableProps } from "antd";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { DepositTag, EndingSoonTag, LeaseStatusTag } from "@/components/leases/tags";
 import { usePeriod } from "@/components/leases/LeaseCard";
 import { useT } from "@/i18n/provider";
@@ -115,7 +116,7 @@ function LeasesPage() {
               onChange={(v) => url.set({ filter: v === "open" ? undefined : v })} />
           )}
         </Flex>
-        <Table<Lease> rowKey="id" columns={columns} dataSource={leases.data?.content} loading={leases.isFetching}
+        <ResponsiveTable<Lease> rowKey="id" columns={columns} dataSource={leases.data?.content} loading={leases.isFetching}
           scroll={{ x: 820 }}
           locale={{
             emptyText: leases.error ? errorMessage(leases.error) : (

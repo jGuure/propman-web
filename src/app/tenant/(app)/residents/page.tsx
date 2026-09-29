@@ -2,11 +2,13 @@
 
 import { PhoneOutlined, UserAddOutlined } from "@ant-design/icons";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Button, Card, Empty, Flex, Grid, Input, Result, Segmented, Select, Table, Tag, Typography, type TableProps } from "antd";
+import { Button, Card, Empty, Flex, Grid, Input, Result, Segmented, Select, Tag, Typography, type TableProps } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
+import { Sensitive } from "@/components/Sensitive";
 import { ResidentFormModal } from "@/components/leases/ResidentFormModal";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
@@ -58,13 +60,13 @@ function ResidentsPage() {
       render: (_, r) => (
         <Flex vertical>
           <Link href={`/residents/${r.id}`}><Typography.Text strong>{r.fullName}</Typography.Text></Link>
-          {r.idNumber && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t(`idType.${r.idType ?? "OTHER"}`)} {r.idNumber}</Typography.Text>}
+          {r.idNumber && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t(`idType.${r.idType ?? "OTHER"}`)} <Sensitive>{r.idNumber}</Sensitive></Typography.Text>}
         </Flex>
       ),
     },
     {
       title: t("residents.phone"), key: "phone",
-      render: (_, r) => <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> {r.phone}</a>,
+      render: (_, r) => <a href={`tel:${r.phone.replace(/[^+\d]/g, "")}`}><PhoneOutlined /> <Sensitive>{r.phone}</Sensitive></a>,
     },
     {
       title: t("residents.leases"), key: "leases", align: "right",
@@ -89,7 +91,7 @@ function ResidentsPage() {
               onChange={(v) => url.set({ filter: v === "all" ? undefined : v })} />
           )}
         </Flex>
-        <Table<ResidentSummary> rowKey="id" columns={columns} dataSource={residents.data?.content}
+        <ResponsiveTable<ResidentSummary> rowKey="id" columns={columns} dataSource={residents.data?.content}
           loading={residents.isFetching} scroll={{ x: 520 }}
           onRow={(r) => ({ onDoubleClick: () => router.push(`/residents/${r.id}`) })}
           locale={{

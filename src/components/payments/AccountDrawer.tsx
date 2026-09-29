@@ -2,10 +2,11 @@
 
 import { FileTextOutlined, UndoOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Drawer, Empty, Flex, Form, Input, Modal, Skeleton, Table, Tag, Typography } from "antd";
+import { Alert, App, Button, Drawer, Empty, Flex, Form, Input, Modal, Skeleton, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { invalidatePortfolio } from "@/components/portfolio/invalidate";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { openPrintPreview, PrintLink } from "@/components/payments/PrintPreview";
 import { useT } from "@/i18n/provider";
 import { errorMessage } from "@/lib/api/errors";
@@ -56,7 +57,7 @@ export function AccountDrawer({ leaseId, residentName, monthlyRent, open, onClos
         <>
           <div style={{ marginBottom: 16 }}><AccountLine account={a.summary} large /></div>
           <Typography.Text strong style={{ display: "block", marginBottom: 8 }}>{t("payments.bills")}</Typography.Text>
-          <Table<Charge> rowKey="id" size="small" pagination={false} dataSource={[...a.charges].reverse()}
+          <ResponsiveTable<Charge> rowKey="id" size="small" pagination={false} dataSource={[...a.charges].reverse()}
             locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("payments.noBills")} /> }}
             columns={[
               { title: t("collect.month"), key: "period", render: (_, c) => dayjs(c.period).format("MMMM YYYY") },

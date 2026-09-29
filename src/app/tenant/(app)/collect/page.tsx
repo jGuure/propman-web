@@ -2,11 +2,12 @@
 
 import { DollarOutlined, MoreOutlined, PhoneOutlined } from "@ant-design/icons";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Button, Card, Col, DatePicker, Dropdown, Empty, Flex, Grid, Input, Progress, Result, Row, Segmented, Select, Table, Tooltip, Typography, type MenuProps, type TableProps } from "antd";
+import { App, Button, Card, Col, DatePicker, Dropdown, Empty, Flex, Grid, Input, Progress, Result, Row, Segmented, Select, Tooltip, Typography, type MenuProps, type TableProps } from "antd";
 import dayjs from "dayjs";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { AccountDrawer } from "@/components/payments/AccountDrawer";
 import { PaymentModal } from "@/components/payments/PaymentModal";
 import { ChargeStatusTag } from "@/components/payments/tags";
@@ -184,7 +185,7 @@ function CollectPage() {
         {filter === "check" && (s?.needsCheck ?? 0) > 0 && (
           <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>{t("collect.toCheckHelp")}</Typography.Paragraph>
         )}
-        <Table<Charge> rowKey="id" columns={columns} dataSource={charges.data?.content} loading={charges.isFetching}
+        <ResponsiveTable<Charge> rowKey="id" columns={columns} dataSource={charges.data?.content} loading={charges.isFetching}
           scroll={{ x: 900 }} size="middle"
           locale={{
             emptyText: charges.error ? errorMessage(charges.error) : (

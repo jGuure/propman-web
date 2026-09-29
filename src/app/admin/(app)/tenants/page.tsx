@@ -2,10 +2,11 @@
 
 import { CheckOutlined, CloseOutlined, PlusOutlined } from "@ant-design/icons";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Button, Card, Flex, Input, Select, Table, Tag, Typography, type TableProps } from "antd";
+import { Button, Card, Flex, Input, Select, Tag, Typography, type TableProps } from "antd";
 import Link from "next/link";
 import { useState } from "react";
 import { CreateTenantDrawer } from "@/components/admin/CreateTenantDrawer";
+import { ResponsiveTable } from "@/components/ResponsiveTable";
 import { useReviewActions } from "@/components/admin/review-actions";
 import { PageHeader } from "@/components/PageHeader";
 import { TenantStatusTag } from "@/components/tags";
@@ -96,7 +97,7 @@ export default function TenantsPage() {
               value: s, label: s === "PENDING_REVIEW" ? "Waiting for review" : s.charAt(0) + s.slice(1).toLowerCase(),
             }))} />
         </Flex>
-        <Table<TenantSummary> rowKey="id" columns={columns} dataSource={tenants.data?.content}
+        <ResponsiveTable<TenantSummary> rowKey="id" columns={columns} dataSource={tenants.data?.content}
           loading={tenants.isFetching} scroll={{ x: 600 }}
           locale={{ emptyText: tenants.error ? errorMessage(tenants.error) : "No tenants" }}
           onChange={(pagination) => setParams((p) => ({
