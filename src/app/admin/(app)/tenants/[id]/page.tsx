@@ -13,6 +13,7 @@ import { errorMessage } from "@/lib/api/errors";
 import type { TenantDetails } from "@/lib/api/types";
 import { usePlatform } from "@/lib/auth/platform-context";
 import { formatDateTime } from "@/lib/format";
+import { useIsMobile } from "@/lib/responsive";
 
 export default function TenantDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function TenantDetailsPage() {
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [form] = Form.useForm<{ reason: string }>();
   const tenant = useQuery({ queryKey: ["platform-tenant", id], queryFn: () => api.tenant(id) });
+  const mobile = useIsMobile();
 
   const onChanged = (updated: TenantDetails) => {
     queryClient.setQueryData(["platform-tenant", id], updated);
@@ -95,7 +97,7 @@ export default function TenantDetailsPage() {
           description={`${t.suspendedReason ?? "No reason given"} — since ${formatDateTime(t.suspendedAt)}`} />
       )}
       <Card>
-        <Descriptions column={{ xs: 1, md: 2 }} bordered size="middle">
+        <Descriptions column={{ xs: 1, md: 2 }} bordered={!mobile} size={mobile ? "small" : "middle"}>
           <Descriptions.Item label="Address">{t.url}</Descriptions.Item>
           <Descriptions.Item label="Slug">{t.slug}</Descriptions.Item>
           <Descriptions.Item label="Email">{t.email}</Descriptions.Item>
